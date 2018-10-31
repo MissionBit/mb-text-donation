@@ -1,4 +1,4 @@
 {% extends "layout.html" %}
 {% block content %}
-  <h2>Thanks, you paid <strong>{{ '%0.2f'| format(total/100|float) }}</strong>!</h2>
+  <h2>Thanks, you paid <strong>{{ '%0.2f'| format(amount/100|float) }}</strong>!</h2>
 {% endblock %}

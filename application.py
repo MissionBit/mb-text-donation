@@ -24,7 +24,7 @@ def charge():
     # amount = request.form['data-amount']
     # description = request.form['data-amount']
     amount = 500
- 	description = "test"
+    description = 'test'
 
     customer = stripe.Customer.create(
         email='customer@example.com',
