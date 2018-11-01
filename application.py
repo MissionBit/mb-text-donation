@@ -18,7 +18,7 @@ def index():
 
 @app.route('/api/data')
 def get_data():
-  return app.send_static_file('data.json')
+  return app.send_static_file('style.css')
 
 @app.route('/donate/<int:message>/')
 def donate(message):
