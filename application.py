@@ -65,6 +65,9 @@ def redirect_to_cdn():
     if url == request.url:
         return None
     else:
+        print('{} to {}'.format(request.url, url))
+        print(repr(request.environ))
+        print('')
         return None
     #return redirect(url, code=302)
 
