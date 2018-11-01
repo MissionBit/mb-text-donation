@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request
 import stripe
 
 stripe_keys = {
@@ -10,19 +10,11 @@ stripe_keys = {
 
 stripe.api_key = stripe_keys['secret_key']
 
-app = Flask(__name__, static_url_path='')
+app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/css/<path:path>')
-def send_file(path):
-    return send_from_directory('css', path)
-
-@app.route('/give/<int:message>/')
-def give(message):
-    return render_template('donate.html', key=stripe_keys['publishable_key'], amount=100*message)
+@app.route('/<int:message>/')
+def index(message):
+    return render_template('index.html', key=stripe_keys['publishable_key'], amount=100*message)
 
 @app.route('/charge', methods=['POST'])
 def charge():
