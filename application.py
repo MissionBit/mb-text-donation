@@ -16,15 +16,12 @@ app = Flask(__name__, static_url_path='')
 def index():
     return render_template('index.html')
 
-# @app.route('/api/data')
-# def get_data():
-#   return app.send_static_file('style.css')
-@app.route('/static/<path:path>')
-def send_js(path):
-    return send_from_directory('static', path)
+@app.route('/css/<path:path>')
+def send_file(path):
+    return send_from_directory('css', path)
 
-@app.route('/donate/<int:message>/')
-def donate(message):
+@app.route('/give/<int:message>/')
+def give(message):
     return render_template('donate.html', key=stripe_keys['publishable_key'], amount=100*message)
 
 @app.route('/charge', methods=['POST'])
