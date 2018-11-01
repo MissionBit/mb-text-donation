@@ -12,9 +12,13 @@ stripe.api_key = stripe_keys['secret_key']
 
 app = Flask(__name__)
 
-@app.route('/<int:message>/')
-def index(message):
-    return render_template('index.html', key=stripe_keys['publishable_key'], amount=100*message)
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/donate/<int:message>/')
+def donate(message):
+    return render_template('donate.html', key=stripe_keys['publishable_key'], amount=100*message)
 
 @app.route('/charge', methods=['POST'])
 def charge():

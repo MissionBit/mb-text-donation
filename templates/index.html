@@ -1,21 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="donation">
-  <form action="/charge" method="post">
-    <article>
-      <label>
-        <span>Amount is ${{ '%0.2f'| format(amount/100|float) }}</span>
-      </label>
-    </article>
-    <input type="hidden" name="amount" value="{{ amount }}" />
-    <script src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-            data-key="{{ key }}"
-            data-image="https://www.missionbit.com/images/icon128.png"
-            data-panel-label="Donate {% raw %}{{amount}}{% endraw %}"
-            data-name="Mission Bit"
-            data-description="Donate to Mission Bit"
-            data-amount="{{ amount }}"
-            data-locale="auto"></script>
-  </form>
+  <h3>Please enter an amount to donate</h3>
 </div>
 {% endblock %}
