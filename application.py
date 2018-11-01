@@ -49,5 +49,23 @@ def charge():
 
     return render_template('charge.html', amount=amount)
 
+@app.before_request
+def redirect_to_cdn():
+    if app.debug or app.testing:
+        return None
+    url = request.url
+    if url.startswith('http://'):
+        url = url.replace('http://', 'https://', 1)
+    if url.startswith('https://mb-text-donation.azurewebsites.net'):
+        url = url.replace(
+            'https://mb-text-donation.azurewebsites.net',
+            'https://donate.missionbit.org',
+            1
+        )
+        app.config['SERVER_NAME'] = 'donate.missionbit.org'
+    if url == request.url:
+        return None
+    return redirect(url, code=302)
+
 if __name__ == '__main__':
     app.run(debug=True)
