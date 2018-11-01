@@ -1,19 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stripe</title>
-  <style type="text/css" media="screen">
-    form article label {
-      display: block;
-      margin: 5px;
-    }
-
-    form .submit {
-      margin: 15px 0;
-    }
-  </style>
+  <title>Mission Bit</title>
+  <link rel="shorcut icon" href="/static/favicon.ico"/> 
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  {% block content %}{% endblock %}
+  <div class="container">
+    <div class="navbar-header"></div>
+    {% block content %}{% endblock %}
+  </div>
 </body>
 </html>
