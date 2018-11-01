@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import stripe
 
 stripe_keys = {
@@ -12,11 +12,13 @@ stripe.api_key = stripe_keys['secret_key']
 
 app = Flask(__name__)
 
+@app.route('/')
+def redirect_to_give():
+    return redirect(url_for('.give', amount=2000), code=302)
+
 @app.route('/<int:amount>/')
-def index(amount):
+def give(amount):
     return render_template('index.html', key=stripe_keys['publishable_key'], amount=amount)
-
-
 
 @app.route('/charge', methods=['POST'])
 def charge():
@@ -27,7 +29,7 @@ def charge():
         source=request.form['stripeToken']
     )
 
-    charge = stripe.Charge.create(
+    stripe.Charge.create(
         customer=customer.id,
         amount=amount,
         currency='USD',

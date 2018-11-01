@@ -1,0 +1,8 @@
+form article label {
+  display: block;
+  margin: 5px;
+}
+
+form .submit {
+  margin: 15px 0;
+}
