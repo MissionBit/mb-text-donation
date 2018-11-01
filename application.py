@@ -65,7 +65,9 @@ def redirect_to_cdn():
         app.config['SERVER_NAME'] = 'donate.missionbit.org'
     if url == request.url:
         return None
-    return redirect(url, code=302)
+    else:
+        print('{} to {}'.format(request.url, url))
+    #return redirect(url, code=302)
 
 if __name__ == '__main__':
     app.run(debug=True)
