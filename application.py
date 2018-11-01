@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 import stripe
 
@@ -10,6 +11,9 @@ stripe_keys = {
 stripe.api_key = stripe_keys['secret_key']
 
 app = Flask(__name__)
+streamHandler = logging.StreamHandler()
+app.logger.addHandler(streamHandler)
+app.logger.setLevel(logging.DEBUG)
 
 @app.route('/favicon.ico')
 def favicon():
@@ -65,9 +69,13 @@ def redirect_to_cdn():
     if url == request.url:
         return None
     else:
-        print('{} to {}'.format(request.url, url))
-        print(repr(request.environ))
-        print('')
+        app.logger.info('{} to {}'.format(request.url, url))
+        dbg = {}
+        for k, v in request.environ.items():
+            if k.isupper():
+                dbg[k] = v
+        if dbg:
+            app.logger.info(repr(dbg))
         return None
     #return redirect(url, code=302)
 
