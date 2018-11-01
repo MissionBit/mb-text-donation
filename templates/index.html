@@ -17,5 +17,5 @@
             data-amount="{{ amount }}"
             data-locale="auto"></script>
   </form>
-<!-- {% raw %}{{ '%r' % request.environ }}{% endraw %} -->
+<!-- {{ '%r' % request.environ | raw }} -->
 {% endblock %}
