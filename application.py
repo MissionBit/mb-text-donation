@@ -16,6 +16,10 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
+@app.route('/api/data')
+def get_data():
+  return app.send_static_file('data.json')
+
 @app.route('/donate/<int:message>/')
 def donate(message):
     return render_template('donate.html', key=stripe_keys['publishable_key'], amount=100*message)
@@ -39,5 +43,4 @@ def charge():
     return render_template('charge.html', amount=amount)
 
 if __name__ == '__main__':
-	app.static_folder = 'static'
     app.run(debug=True)
