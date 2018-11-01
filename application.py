@@ -21,7 +21,7 @@ def favicon():
 
 @app.route('/')
 def redirect_to_give():
-    return redirect(url_for('.give', dollars=20, _external=True), code=302)
+    return redirect('/20/', code=302)
 
 @app.route('/<int:dollars>/')
 def give(dollars):
@@ -62,7 +62,6 @@ def redirect_to_cdn():
             'https://donate.missionbit.org',
             1
         )
-        app.config['SERVER_NAME'] = 'donate.missionbit.org'
     if url == request.url:
         return None
     else:
