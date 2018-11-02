@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="donation">
+  <form action="/charge" method="post">
+    <article>
+      <label>
+        <span>Pleaase enter the amount you'd like to donate: </span>
+        <input id="amount" name="amount" value="{{ amount }}" />
+      </label>
+    </article>
+    
+    <script type="text/javascript">
+      // console.log({{ amount }});
+      // function othername() {
+      //     var input = document.getElementById("amount").value;
+      //     alert(input);
+      // }
+      window.onload = function(){
+        var input = document.getElementById("amount");
+        input.onchange = function(event){
+          //var button = document.getElementById("stripe-button");
+          //button.dataset.amount = event.target.value * 100;
+          var amount = event.target.value;
+          amount = amount.replace(/\$/g, '').replace(/\,/g, '')
+          amount = parseFloat(amount);
+          if (isNaN(amount)) {
+            alert("Please enter a valid amount");
+          }
+          else if (amount < 1.00) {
+            alert("Please enter an amount of $1 or more");
+          }
+          else{
+            event.target.value = amount;
+          }
+
+        }
+      }
+    </script>
+    <script id="stripe-button" src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+            data-key="{{ key }}"
+            data-image="https://www.missionbit.com/images/icon128.png"
+            data-panel-label="Donate {% raw %}{{amount}}{% endraw %}"
+            data-name="Mission Bit"
+            data-description="Donate to Mission Bit"
+            data-amount="{{ amount }}"
+            data-locale="auto"></script>
+  </form>
+</div>
+{% endblock %}
