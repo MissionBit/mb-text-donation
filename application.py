@@ -1,5 +1,6 @@
 import os
 import logging
+from urllib.parse import urlsplit, urlunsplit
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from werkzeug.contrib.fixers import ProxyFix
 import stripe
@@ -11,8 +12,20 @@ stripe_keys = {
 
 stripe.api_key = stripe_keys['secret_key']
 
+CANONICAL_HOST = os.environ['CANONICAL_HOST']
+
+def verizonProxyHostFixer(app):
+    """Azure's Verizon Premium CDN uses the header X-Host instead of X-Forwarded-Host
+    """
+    def proxy_fixed_app(environ, start_response):
+        if environ.get('HTTP_X_HOST') == CANONICAL_HOST:
+            environ['HTTP_X_FORWARDED_HOST'] = CANONICAL_HOST
+        return app(environ, start_response)
+    return proxy_fixed_app
+
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app)
+if CANONICAL_HOST:
+    app.wsgi_app = verizonProxyHostFixer(ProxyFix(app.wsgi_app))
 streamHandler = logging.StreamHandler()
 app.logger.addHandler(streamHandler)
 app.logger.setLevel(logging.DEBUG)
@@ -59,31 +72,15 @@ def charge():
 
     return render_template('charge.html', amount=amount)
 
-@app.before_request
-def redirect_to_cdn():
-    if app.debug or app.testing:
-        return None
-    url = request.url
-    if url.startswith('http://'):
-        url = url.replace('http://', 'https://', 1)
-    if url.startswith('https://mb-text-donation.azurewebsites.net'):
-        url = url.replace(
-            'https://mb-text-donation.azurewebsites.net',
-            'https://donate.missionbit.org',
-            1
-        )
-    if url == request.url:
-        return None
-    else:
-        app.logger.info('{} to {}'.format(request.url, url))
-        dbg = {}
-        for k, v in request.environ.items():
-            if k.isupper() and k.startswith('HTTP_'):
-                dbg[k] = v
-        if dbg:
-            app.logger.info(repr(dbg))
-        return None
-    #return redirect(url, code=302)
+if CANONICAL_HOST:
+    @app.before_request
+    def redirect_to_cdn():
+        o = urlsplit(request.url)
+        if o.scheme == 'https' and o.netloc == CANONICAL_HOST:
+            return None
+        url = urlunsplit(('https', CANONICAL_HOST, o[2], o[3], o[4]))
+        app.logger.info('REDIRECT {}://{} to {}'.format(o.scheme, o.netloc, url))
+        return redirect(url, code=302)
 
 if __name__ == '__main__':
     app.run(debug=True)
