@@ -37,9 +37,7 @@ def give(dollars):
 
 @app.route('/charge', methods=['POST'])
 def charge():
-    amount = request.form.get('amount', type=float)
-    amount = int(amount * 100);
-
+    amount = request.form.get('amount', type=int)
 
     customer = stripe.Customer.create(
         email=request.form['stripeEmail'],

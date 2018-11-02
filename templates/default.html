@@ -5,7 +5,8 @@
     <article>
       <label>
         <span>Pleaase enter the amount you'd like to donate: </span>
-        <input id="amount" name="amount" value="{{ amount }}" />
+        <input id="amount_display" name="amount_display" value="{{ amount }}" />
+        <input type="hidden" id="amount" name="amount" />
       </label>
     </article>
     
@@ -16,7 +17,7 @@
       //     alert(input);
       // }
       window.onload = function(){
-        var input = document.getElementById("amount");
+        var input = document.getElementById("amount_display");
         input.onchange = function(event){
           //var button = document.getElementById("stripe-button");
           //button.dataset.amount = event.target.value * 100;
@@ -30,7 +31,9 @@
             alert("Please enter an amount of $1 or more");
           }
           else{
-            event.target.value = amount;
+            //event.target.value = amount;
+            var amount_hidden = document.getElementById("amount");
+            amount_hidden.value = parseInt(amount * 100);
           }
 
         }
