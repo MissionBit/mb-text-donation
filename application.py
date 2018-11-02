@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 import stripe
 
@@ -10,6 +11,9 @@ stripe_keys = {
 stripe.api_key = stripe_keys['secret_key']
 
 app = Flask(__name__)
+streamHandler = logging.StreamHandler()
+app.logger.addHandler(streamHandler)
+app.logger.setLevel(logging.DEBUG)
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -25,7 +29,7 @@ def favicon():
 
 @app.route('/')
 def redirect_to_give():
-    return redirect(url_for('.give', dollars=20, _external=True), code=302)
+    return redirect('/20/', code=302)
 
 @app.route('/<int:dollars>/')
 def give(dollars):
@@ -66,10 +70,18 @@ def redirect_to_cdn():
             'https://donate.missionbit.org',
             1
         )
-        app.config['SERVER_NAME'] = 'donate.missionbit.org'
     if url == request.url:
         return None
-    return redirect(url, code=302)
+    else:
+        app.logger.info('{} to {}'.format(request.url, url))
+        dbg = {}
+        for k, v in request.environ.items():
+            if k.isupper():
+                dbg[k] = v
+        if dbg:
+            app.logger.info(repr(dbg))
+        return None
+    #return redirect(url, code=302)
 
 if __name__ == '__main__':
     app.run(debug=True)
