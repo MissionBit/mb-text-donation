@@ -1,6 +1,7 @@
 import os
 import logging
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from werkzeug.contrib.fixers import ProxyFix
 import stripe
 
 stripe_keys = {
@@ -11,6 +12,7 @@ stripe_keys = {
 stripe.api_key = stripe_keys['secret_key']
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app)
 streamHandler = logging.StreamHandler()
 app.logger.addHandler(streamHandler)
 app.logger.setLevel(logging.DEBUG)
@@ -76,7 +78,7 @@ def redirect_to_cdn():
         app.logger.info('{} to {}'.format(request.url, url))
         dbg = {}
         for k, v in request.environ.items():
-            if k.isupper():
+            if k.isupper() and k.startswith('HTTP_'):
                 dbg[k] = v
         if dbg:
             app.logger.info(repr(dbg))
