@@ -6,20 +6,29 @@ body {
 }
 
 .container {
-  width: 1200px;
+  width: 100vw;
+  height: 100vh;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .donation {
+  flex-grow: 1;
   text-align: center;
   border: 1px;
   font-size: x-large;
+  padding: 1em;
 }
 
 .navbar-header {
-  height: 100px;
-  background: url(../images/icon64.png) no-repeat center center;
-  margin: 10px 5px 5px 5px;
+  flex-grow: 1;
+  width: 100vw;
+  max-height: 100vw;
+  max-width: 100vh;
+  align-self: center;
+  background: center / contain no-repeat url(../images/icon128.svg);
+  margin: 1em 5px 5px 5px;
 }
 
 @media screen {
