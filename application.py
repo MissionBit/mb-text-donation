@@ -1,5 +1,6 @@
 import os
 import logging
+import hashlib
 from urllib.parse import urlsplit, urlunsplit
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from werkzeug.contrib.fixers import ProxyFix
@@ -30,6 +31,44 @@ streamHandler = logging.StreamHandler()
 app.logger.addHandler(streamHandler)
 app.logger.setLevel(logging.DEBUG)
 
+@app.template_filter('asset_url')
+def asset_url(path, CACHE={}):
+    abspath = os.path.abspath(app.root_path + path)
+    # Avoid directory traversal mistakes
+    if not abspath.startswith(app.static_folder):
+        return path
+    try:
+        # Check that the file exists and use its
+        # size and creation time as a cache key to avoid
+        # computing a digest on every request
+        stat = os.stat(abspath)
+        key = stat.st_size, stat.st_mtime
+        cached = CACHE.get(path)
+        if cached is not None and CACHE[0] == key:
+            return cached[1]
+        # Get a SHA1 digest of the file contents
+        h = hashlib.sha1()
+        with open(abspath, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b''):
+                h.update(chunk)
+        # Use the prefix of the digest in the URL to ensure
+        # the browser will receive the latest version
+        rval = '{}?v={}'.format(path, h.hexdigest()[:8])
+        CACHE[path] = key, rval
+        return rval
+    except OSError:
+        # This will catch any FileNotFoundError or similar
+        # issues with stat, open, or read.
+        return path
+
+@app.after_request
+def add_cache_control_header(response):
+    """Disable caching for non-static endpoints
+    """
+    if 'Cache-Control' not in response.headers:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('default.html', key=stripe_keys['publishable_key']), 200
@@ -40,6 +79,14 @@ def favicon():
         os.path.join(app.root_path, 'static'),
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
+    )
+
+@app.route('/.well-known/apple-developer-merchantid-domain-association')
+def apple_pay_domain_association():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'apple-developer-merchantid-domain-association',
+        mimetype='text/plain'
     )
 
 @app.route('/')
