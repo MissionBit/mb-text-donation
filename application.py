@@ -12,7 +12,7 @@ stripe_keys = {
 
 stripe.api_key = stripe_keys['secret_key']
 
-CANONICAL_HOST = os.environ['CANONICAL_HOST']
+CANONICAL_HOST = os.environ.get('CANONICAL_HOST')
 
 def verizonProxyHostFixer(app):
     """Azure's Verizon Premium CDN uses the header X-Host instead of X-Forwarded-Host
