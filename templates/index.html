@@ -1,22 +1,30 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="donation">
-  <form action="/charge" method="post">
-    <article>
-      <label>
-        <span>Amount is ${{ '%0.2f'| format(amount/100|float) }}</span>
-      </label>
-    </article>
-    <input type="hidden" name="amount" value="{{ amount }}" />
-    <script src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-            data-key="{{ key }}"
-            data-image="https://www.missionbit.com/images/icon128.png"
-            data-panel-label="Donate {% raw %}{{amount}}{% endraw %}"
-            data-label="Donate with Card"
-            data-name="Mission Bit"
-            data-description="Donate to Mission Bit"
-            data-amount="{{ amount }}"
-            data-locale="auto"></script>
+  <form action="/charge" method="post" class="donate-form-container">
+    <div class="donate-form-header">
+      Enter an amount to give
+    </div>
+    <div class="donate-form-body">
+      <div class="donation-amount-wrapper">
+        <label for="amount">
+          Donation Amount
+        </label>
+        <div class="input-field-container">
+          <span class="preinput">$</span>
+          <input type="number" name="amount" required step="1" value="{{ amount or 50 }}" />
+          <span class="postinput">USD</span>
+        </div>
+        <div class="error"></div>
+      </div>
+      <div id="payment-request-button"></div>
+      <button id="donate-button">Donate</button>
+    </div>
   </form>
 </div>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://checkout.stripe.com/checkout.js"></script>
+<script>var STRIPE_PK = {{ key | tojson }};</script>
+<script src="{{ '/static/js/donate.js' | asset_url }}"></script>
+
 {% endblock %}

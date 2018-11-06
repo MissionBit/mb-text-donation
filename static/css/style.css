@@ -31,6 +31,11 @@ body {
   margin: 1em 5px 5px 5px;
 }
 
+footer {
+  align-self: center;
+  padding: 1em;
+}
+
 @media screen {
     form, article, label {
       display: block;

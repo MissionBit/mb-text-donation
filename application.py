@@ -1,10 +1,12 @@
 import os
+import re
 import logging
 import hashlib
 from urllib.parse import urlsplit, urlunsplit
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from werkzeug.contrib.fixers import ProxyFix
 import stripe
+from parse_cents import parse_cents
 
 stripe_keys = {
   'secret_key': os.environ['SECRET_KEY'],
@@ -69,10 +71,6 @@ def add_cache_control_header(response):
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response
 
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('default.html', key=stripe_keys['publishable_key']), 200
-
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(
@@ -90,15 +88,12 @@ def apple_pay_domain_association():
     )
 
 @app.route('/')
-def redirect_to_give():
-    return redirect('/20/', code=302)
-
-@app.route('/<int:dollars>/')
-def give(dollars):
+@app.route('/<dollars>/')
+def index(dollars=''):
     return render_template(
         'index.html',
         key=stripe_keys['publishable_key'],
-        amount=dollars * 100
+        amount=parse_cents(dollars)
     )
 
 @app.route('/charge', methods=['POST'])
@@ -126,7 +121,6 @@ if CANONICAL_HOST:
         if o.scheme == 'https' and o.netloc == CANONICAL_HOST:
             return None
         url = urlunsplit(('https', CANONICAL_HOST, o[2], o[3], o[4]))
-        app.logger.info('REDIRECT {}://{} to {}'.format(o.scheme, o.netloc, url))
         return redirect(url, code=302)
 
 if __name__ == '__main__':
