@@ -6,3 +6,5 @@ MarkupSafe==1.0
 Werkzeug==0.14.1
 stripe==2.11.0
 python-dotenv==0.9.1
+sendgrid==5.6.0
+jsonschema==2.6.0

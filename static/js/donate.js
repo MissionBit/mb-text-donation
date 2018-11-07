@@ -4,7 +4,7 @@
   function onToken(e) {
     console.log(e);
     completeDonation({
-      token: e.token.id,
+      token: e.token,
       type: 'paymentRequest',
       amount: amount
     }).then(
@@ -23,21 +23,52 @@
     console.log(e);
   }
 
-  function donationCompleted() {
-    console.log('completed');
+  function donationCompleted(result) {
+    console.log({ donationCompleted: result });
+    formRef.classList.add('success');
+    formRef.querySelector('.donor-email').innerText = result.email;
   }
 
-  function donationFailed() {
-    console.log('failed');
+  function donationFailed(err) {
+    console.log({ donationFailed: err });
+    errorRef.innerText = "Donation failed, you have not been charged.";
+    amountRef.removeAttribute("disabled");
+    if (!formRef.classList.contains('invalid')) {
+      formRef.removeAttribute("disabled");
+      donateButtonRef.removeAttribute("disabled");
+    }
   }
 
   function completeDonation(opts) {
-    console.log(opts);
-    return Promise.reject(new Error('Not Implemented'));
+    console.log({ completeDonation: opts });
+    errorRef.innerText = "";
+    formRef.classList.add('processing');
+    formRef.setAttribute("disabled", "disabled");
+    donateButtonRef.setAttribute("disabled", "disabled");
+    amountRef.setAttribute("disabled", "disabled");
+
+    return fetch('/charge', {
+      method: 'POST',
+      body: JSON.stringify(opts),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error("Payment attempt failed");
+      }
+    }).finally(function () {
+      formRef.classList.remove('processing');
+    });
   }
 
   function parseCents(s) {
-    var m = /^\s*\$?([1-9]\d*)((?:,\d\d\d)*)(?:\.(\d\d))?\s*$/.exec(amountRef.value);
+    /* Parse a string representing a dollar value to cents */
+
+    var m = /^\s*\$?([1-9]\d*)((?:,\d\d\d)*)(?:\.(\d\d))?\s*$/.exec(s);
     if (!m) {
       return null;
     }
@@ -53,10 +84,12 @@
       return;
     }
     if (nextAmount === null) {
+      formRef.classList.add('invalid');
       formRef.setAttribute("disabled", "disabled");
       donateButtonRef.setAttribute("disabled", "disabled");
       return;
     } else {
+      formRef.classList.remove('invalid');
       formRef.removeAttribute("disabled");
       donateButtonRef.removeAttribute("disabled");
     }
@@ -73,6 +106,7 @@
   var amountRef = document.querySelector("input[name=amount]");
   var donateButtonRef = document.getElementById("donate-button");
   var paymentRequestButtonRef = document.getElementById("payment-request-button");
+  var errorRef = document.querySelector('.donate-form-body .error');
   var stripe = Stripe(STRIPE_PK);
   var elements = stripe.elements();
   var amount = parseCents(amountRef.value) || parseCents('50');
@@ -114,9 +148,10 @@
     name: 'Mission Bit',
     description: 'Donate to Mission Bit',
     token: function (token) {
+      console.log({ handlerToken: token });
       completeDonation({
         amount: amount,
-        token: token.id,
+        token: token,
         type: 'checkout'
       }).then(donationCompleted, donationFailed);
     }

@@ -3,10 +3,14 @@ import re
 import logging
 import hashlib
 from urllib.parse import urlsplit, urlunsplit
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
 from werkzeug.contrib.fixers import ProxyFix
 import stripe
+import sendgrid
+from jsonschema import validate
 from parse_cents import parse_cents
+
+RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
 
 stripe_keys = {
   'secret_key': os.environ['SECRET_KEY'],
@@ -16,6 +20,26 @@ stripe_keys = {
 stripe.api_key = stripe_keys['secret_key']
 
 CANONICAL_HOST = os.environ.get('CANONICAL_HOST')
+
+CHARGE_SCHEMA = {
+    "type": "object",
+    "description": "A donation to be collected",
+    "properties": {
+        "amount": {
+            "type": "integer",
+            "description": "USD cents of donation",
+            "minimum": 100
+        },
+        "token": {
+            "type": "object",
+            "description": "Stripe token",
+            "properties": {
+                "email": { "type": "string" },
+                "id": { "type": "string" }
+            }
+        }
+    }
+}
 
 def verizonProxyHostFixer(app):
     """Azure's Verizon Premium CDN uses the header X-Host instead of X-Forwarded-Host
@@ -98,21 +122,25 @@ def index(dollars=''):
 
 @app.route('/charge', methods=['POST'])
 def charge():
-    amount = request.form.get('amount', type=int)
-
+    body = request.json
+    validate(body, CHARGE_SCHEMA)
+    amount = body['amount']
+    token = body['token']
     customer = stripe.Customer.create(
-        email=request.form['stripeEmail'],
-        source=request.form['stripeToken']
+        email=token['email'],
+        source=token['id']
     )
-
-    stripe.Charge.create(
+    charge = stripe.Charge.create(
         customer=customer.id,
         amount=amount,
         currency='USD',
         description='Donation'
     )
-
-    return render_template('charge.html', amount=amount)
+    return jsonify(
+        email=customer.email,
+        amount=amount,
+        id=charge.id
+    )
 
 if CANONICAL_HOST:
     @app.before_request
