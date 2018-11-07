@@ -137,22 +137,18 @@
   });
   var prButton = elements.create('paymentRequestButton', {
     paymentRequest: paymentRequest,
+    style: {
+      paymentRequestButton: {
+        type: 'donate',
+        height: '64px'
+      }
+    }
   });
   paymentRequest.on('token', onToken);
   paymentRequest.on('cancel', onCancel);
   paymentRequest.canMakePayment().then(function (result) {
     if (result) {
-      prButton.mount(
-        paymentRequestButtonRef,
-        {
-          style: {
-            paymentRequestButton: {
-              type: 'donate',
-              height: '64px'
-            }
-          }
-        }
-      );
+      prButton.mount(paymentRequestButtonRef);
     } else {
       paymentRequestButtonRef.style.display = 'none';
     }
