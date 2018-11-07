@@ -146,8 +146,10 @@
         paymentRequestButtonRef,
         {
           style: {
-            type: 'donate',
-            height: '64px'
+            paymentRequestButton: {
+              type: 'donate',
+              height: '64px'
+            }
           }
         }
       );
