@@ -27,18 +27,25 @@ CANONICAL_HOST = os.environ.get('CANONICAL_HOST')
 CHARGE_SCHEMA = {
     "type": "object",
     "description": "A donation to be collected",
+    "required": ["type", "amount", "email", "token"],
     "properties": {
+        "type": {
+            "type": "string",
+            "enum": ["checkout", "paymentRequest"]
+        },
         "amount": {
             "type": "integer",
             "description": "USD cents of donation",
             "minimum": 100
         },
+        "email": {"type": "string"},
+        "name": {"type": "string"},
         "token": {
             "type": "object",
             "description": "Stripe token",
+            "required": ["id"],
             "properties": {
-                "email": { "type": "string" },
-                "id": { "type": "string" }
+                "id": {"type": "string"}
             }
         }
     }
@@ -151,10 +158,10 @@ def charge():
     body = request.json
     validate(body, CHARGE_SCHEMA)
     amount = body['amount']
-    token = body['token']
     customer = stripe.Customer.create(
-        email=token['email'],
-        source=token['id']
+        email=body['email'],
+        source=body['token']['id'],
+        metadata={"name": body.get("name")}
     )
     charge = stripe.Charge.create(
         customer=customer.id,

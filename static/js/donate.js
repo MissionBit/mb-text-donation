@@ -5,6 +5,8 @@
     console.log(e);
     completeDonation({
       token: e.token,
+      email: e.payerEmail,
+      name: e.payerName,
       type: 'paymentRequest',
       amount: amount
     }).then(
@@ -165,6 +167,8 @@
       completeDonation({
         amount: amount,
         token: token,
+        email: token.email,
+        name: token.card.name,
         type: 'checkout'
       }).then(donationCompleted, donationFailed);
     }
