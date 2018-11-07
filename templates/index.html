@@ -14,7 +14,7 @@
             name="amount"
             required
             step="1"
-            value="{{ amount or 50 }}"
+            value="{{ amount // 100 if amount else 50 }}"
             aria-label="Donation Amount"
           />
           <span class="postinput">USD</span>
