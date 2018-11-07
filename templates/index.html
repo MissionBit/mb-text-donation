@@ -3,16 +3,20 @@
 <div class="donation">
   <form action="/charge" method="post" class="donate-form-container">
     <div class="donate-form-header">
-      Enter an amount to give
+      <label for="amount">Enter an amount to give</label>
     </div>
     <div class="donate-form-body">
       <div class="donation-amount-wrapper">
-        <label for="amount">
-          Donation Amount
-        </label>
         <div class="input-field-container">
           <span class="preinput">$</span>
-          <input type="number" name="amount" required step="1" value="{{ amount or 50 }}" />
+          <input
+            type="number"
+            name="amount"
+            required
+            step="1"
+            value="{{ amount or 50 }}"
+            aria-label="Donation Amount"
+          />
           <span class="postinput">USD</span>
         </div>
         <div class="error"></div>
