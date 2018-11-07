@@ -10,13 +10,13 @@
       type: 'paymentRequest',
       amount: amount
     }).then(
-      function () {
+      function (result) {
         e.complete('success');
-        donationCompleted();
+        donationCompleted(result);
       },
-      function () {
+      function (err) {
         e.complete('fail');
-        donationFailed();
+        donationFailed(err);
       }
     );
   }
