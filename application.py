@@ -1,10 +1,19 @@
 import os
+import re
+import time
 import logging
 import hashlib
 from urllib.parse import urlsplit, urlunsplit
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
 from werkzeug.contrib.fixers import ProxyFix
 import stripe
+import sendgrid
+from jsonschema import validate
+from parse_cents import parse_cents
+from python_http_client import exceptions
+
+RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
+SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 
 stripe_keys = {
   'secret_key': os.environ['SECRET_KEY'],
@@ -14,6 +23,26 @@ stripe_keys = {
 stripe.api_key = stripe_keys['secret_key']
 
 CANONICAL_HOST = os.environ.get('CANONICAL_HOST')
+
+CHARGE_SCHEMA = {
+    "type": "object",
+    "description": "A donation to be collected",
+    "properties": {
+        "amount": {
+            "type": "integer",
+            "description": "USD cents of donation",
+            "minimum": 100
+        },
+        "token": {
+            "type": "object",
+            "description": "Stripe token",
+            "properties": {
+                "email": { "type": "string" },
+                "id": { "type": "string" }
+            }
+        }
+    }
+}
 
 def verizonProxyHostFixer(app):
     """Azure's Verizon Premium CDN uses the header X-Host instead of X-Forwarded-Host
@@ -69,10 +98,6 @@ def add_cache_control_header(response):
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response
 
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('default.html', key=stripe_keys['publishable_key']), 200
-
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(
@@ -90,34 +115,85 @@ def apple_pay_domain_association():
     )
 
 @app.route('/')
-def redirect_to_give():
-    return redirect('/20/', code=302)
-
-@app.route('/<int:dollars>/')
-def give(dollars):
+@app.route('/<dollars>/')
+def index(dollars=''):
     return render_template(
         'index.html',
         key=stripe_keys['publishable_key'],
-        amount=dollars * 100
+        amount=parse_cents(dollars)
     )
+
+def format_identifier(s):
+    """
+    >>> format_identifier('apple_pay')
+    'Apple Pay'
+    """
+    return ' '.join(map(lambda s: s.capitalize(), s.split('_')))
+
+def format_source(source):
+    parts = []
+    if source['object'] == 'card':
+        if source['brand'] != 'Unknown':
+            parts.append(source['brand'])
+        if source['funding'] != 'unknown':
+            parts.append(source['funding'])
+        parts.append('card')
+        if source['tokenization_method']:
+            parts.append(
+                '({})'.format(
+                    format_identifier(source['tokenization_method'])
+                )
+            )
+    return ' '.join(parts) or 'Unknown'
 
 @app.route('/charge', methods=['POST'])
 def charge():
-    amount = request.form.get('amount', type=int)
-
+    body = request.json
+    validate(body, CHARGE_SCHEMA)
+    amount = body['amount']
+    token = body['token']
     customer = stripe.Customer.create(
-        email=request.form['stripeEmail'],
-        source=request.form['stripeToken']
+        email=token['email'],
+        source=token['id']
     )
-
-    stripe.Charge.create(
+    charge = stripe.Charge.create(
         customer=customer.id,
         amount=amount,
         currency='USD',
         description='Donation'
     )
+    sg = sendgrid.SendGridAPIClient(apikey=SENDGRID_API_KEY)
+    email_sent = False
+    try:
+        response = sg.client.mail.send.post(request_body={
+            "template_id": RECEIPT_TEMPLATE_ID,
+            "from": {
+                "email": "donate@missionbit.com"
+            },
+            "personalizations": [
+                {
+                    "to": [
+                        { "email": customer.email }
+                    ],
+                    "dynamic_template_data": {
+                        "transaction_id": charge.id,
+                        "total": '${:,.2f}'.format(charge.amount * 0.01),
+                        "date": time.strftime('%x', time.gmtime(charge.created)),
+                        "payment_method": format_source(charge.source)
+                    }
+                }
+            ]
+        })
+        email_sent = 200 <= response.status_code < 300
+    except exceptions.BadRequestsError:
+        pass
 
-    return render_template('charge.html', amount=amount)
+    return jsonify(
+        email_sent=email_sent,
+        email=customer.email,
+        amount=amount,
+        id=charge.id
+    )
 
 if CANONICAL_HOST:
     @app.before_request
@@ -126,7 +202,6 @@ if CANONICAL_HOST:
         if o.scheme == 'https' and o.netloc == CANONICAL_HOST:
             return None
         url = urlunsplit(('https', CANONICAL_HOST, o[2], o[3], o[4]))
-        app.logger.info('REDIRECT {}://{} to {}'.format(o.scheme, o.netloc, url))
         return redirect(url, code=302)
 
 if __name__ == '__main__':

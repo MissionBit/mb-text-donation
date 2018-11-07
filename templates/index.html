@@ -1,22 +1,57 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="donation">
-  <form action="/charge" method="post">
-    <article>
-      <label>
-        <span>Amount is ${{ '%0.2f'| format(amount/100|float) }}</span>
-      </label>
-    </article>
-    <input type="hidden" name="amount" value="{{ amount }}" />
-    <script src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-            data-key="{{ key }}"
-            data-image="https://www.missionbit.com/images/icon128.png"
-            data-panel-label="Donate {% raw %}{{amount}}{% endraw %}"
-            data-label="Donate with Card"
-            data-name="Mission Bit"
-            data-description="Donate to Mission Bit"
-            data-amount="{{ amount }}"
-            data-locale="auto"></script>
+  <form action="/charge" method="post" class="donate-form-container">
+    <div class="donate-form-header">
+      <label for="amount">Enter an amount to give</label>
+    </div>
+    <div class="donate-form-body">
+      <div class="donation-amount-wrapper">
+        <div class="input-field-container">
+          <span class="preinput">$</span>
+          <input
+            type="number"
+            name="amount"
+            required
+            step="1"
+            value="{{ amount or 50 }}"
+            aria-label="Donation Amount"
+          />
+          <span class="postinput">USD</span>
+        </div>
+        <div class="error"></div>
+      </div>
+      <div class="action-container">
+        <div class="processing-message">
+          Collecting your donation&hellip;
+        </div>
+        <div id="payment-request-button"></div>
+        <button id="donate-button">Donate</button>
+      </div>
+      <div class="success-message">
+        <h2>Thank you!</h2>
+        <p class="email-sent_true">
+          Your donation has been collected and a receipt
+          has been sent to:<br />
+          <span class="donor-email"></span><br><br>
+          Transaction ID:<br>
+          <span class="donor-transaction-id"></span>
+        </p>
+        <p class="email-sent_false">
+          Your donation has been collected, but we were
+          unable to deliver a receipt email to
+          <span class="donor-email"></span>. We can issue
+          your receipt if you contact
+          <a href="mailto:donate@missionbit.com?subject=Missing recipt for transaction" class="donate-email-link">donate@missionbit.com</a>
+          with the transaction id:<br><span class="donor-transaction-id"></span>.
+        </p>
+      </div>
+    </div>
   </form>
 </div>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://checkout.stripe.com/checkout.js"></script>
+<script>var STRIPE_PK = {{ key | tojson }};</script>
+<script src="{{ '/static/js/donate.js' | asset_url }}"></script>
+
 {% endblock %}
