@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import logging
 import hashlib
 from urllib.parse import urlsplit, urlunsplit
@@ -9,8 +10,10 @@ import stripe
 import sendgrid
 from jsonschema import validate
 from parse_cents import parse_cents
+from python_http_client import exceptions
 
 RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
+SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 
 stripe_keys = {
   'secret_key': os.environ['SECRET_KEY'],
@@ -120,6 +123,29 @@ def index(dollars=''):
         amount=parse_cents(dollars)
     )
 
+def format_identifier(s):
+    """
+    >>> format_identifier('apple_pay')
+    'Apple Pay'
+    """
+    return ' '.join(map(lambda s: s.capitalize(), s.split('_')))
+
+def format_source(source):
+    parts = []
+    if source['object'] == 'card':
+        if source['brand'] != 'Unknown':
+            parts.append(source['brand'])
+        if source['funding'] != 'unknown':
+            parts.append(source['funding'])
+        parts.append('card')
+        if source['tokenization_method']:
+            parts.append(
+                '({})'.format(
+                    format_identifier(source['tokenization_method'])
+                )
+            )
+    return ' '.join(parts) or 'Unknown'
+
 @app.route('/charge', methods=['POST'])
 def charge():
     body = request.json
@@ -136,7 +162,34 @@ def charge():
         currency='USD',
         description='Donation'
     )
+    sg = sendgrid.SendGridAPIClient(apikey=SENDGRID_API_KEY)
+    email_sent = False
+    try:
+        response = sg.client.mail.send.post(request_body={
+            "template_id": RECEIPT_TEMPLATE_ID,
+            "from": {
+                "email": "donate@missionbit.com"
+            },
+            "personalizations": [
+                {
+                    "to": [
+                        { "email": customer.email }
+                    ],
+                    "dynamic_template_data": {
+                        "transaction_id": charge.id,
+                        "total": '${:,.2f}'.format(charge.amount * 0.01),
+                        "date": time.strftime('%x', time.gmtime(charge.created)),
+                        "payment_method": format_source(charge.source)
+                    }
+                }
+            ]
+        })
+        email_sent = 200 <= response.status_code < 300
+    except exceptions.BadRequestsError:
+        pass
+
     return jsonify(
+        email_sent=email_sent,
         email=customer.email,
         amount=amount,
         id=charge.id

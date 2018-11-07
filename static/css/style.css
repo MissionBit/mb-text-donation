@@ -74,6 +74,9 @@ body {
   border: 1px solid #7bc1fa;
   outline: 0;
 }
+.input-field-container input:disabled {
+  cursor: initial;
+}
 
 /*
 
@@ -127,8 +130,14 @@ body {
   display: none;
 }
 
-.success .success-message {
+.success .success-message,
+.email-sent .email-sent_true {
   display: block;
+}
+
+.email-sent_true,
+.email-sent .email-sent_false {
+  display: none;
 }
 
 .success-message {
@@ -138,6 +147,13 @@ body {
 
 .success-message p {
   text-align: left;
+  font-size: large;
+}
+
+.donor-transaction-id {
+  font-family: monospace;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .donate-form-container.processing {
@@ -180,6 +196,9 @@ body {
   border: 0;
   text-transform: uppercase;
   cursor: pointer;
+}
+#donate-button:disabled {
+  cursor: initial;
 }
 #donate-button:focus,
 #donate-button:hover {

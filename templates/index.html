@@ -30,10 +30,20 @@
       </div>
       <div class="success-message">
         <h2>Thank you!</h2>
-        <p>
+        <p class="email-sent_true">
           Your donation has been collected and a receipt
           has been sent to:<br />
-          <span class="donor-email"></span>
+          <span class="donor-email"></span><br><br>
+          Transaction ID:<br>
+          <span class="donor-transaction-id"></span>
+        </p>
+        <p class="email-sent_false">
+          Your donation has been collected, but we were
+          unable to deliver a receipt email to
+          <span class="donor-email"></span>. We can issue
+          your receipt if you contact
+          <a href="mailto:donate@missionbit.com?subject=Missing recipt for transaction" class="donate-email-link">donate@missionbit.com</a>
+          with the transaction id:<br><span class="donor-transaction-id"></span>.
         </p>
       </div>
     </div>

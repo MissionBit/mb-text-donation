@@ -23,10 +23,25 @@
     console.log(e);
   }
 
+  function forEach(arrayLike, f) {
+    Array.prototype.forEach.call(arrayLike, f);
+  }
+
+  function spanReplace(parent, selector, text) {
+    forEach(parent.querySelectorAll(selector), function (el) {
+      el.innerText = text;
+    });
+  }
+
   function donationCompleted(result) {
     console.log({ donationCompleted: result });
     formRef.classList.add('success');
-    formRef.querySelector('.donor-email').innerText = result.email;
+    formRef.classList.toggle('email-sent', result.email_sent);
+    spanReplace(formRef, '.donor-email', result.email);
+    spanReplace(formRef, '.donor-transaction-id', result.id);
+    forEach(formRef.querySelectorAll('a.donate-email-link'), function (el) {
+      el.href = el.href.replace(/\S+$/, result.id);
+    });
   }
 
   function donationFailed(err) {
