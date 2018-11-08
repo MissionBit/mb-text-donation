@@ -151,8 +151,7 @@
   paymentRequest.canMakePayment().then(function (result) {
     if (result) {
       prButton.mount(paymentRequestButtonRef);
-    } else {
-      paymentRequestButtonRef.style.display = 'none';
+      formRef.classList.add('payment-request');
     }
   });
   var handler = StripeCheckout.configure({

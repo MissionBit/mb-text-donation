@@ -188,6 +188,13 @@ body {
   margin: 12px 0;
 }
 
+.payment-request_true {
+  display: none;
+}
+.payment-request .payment-request_true {
+  display: initial;
+}
+
 #donate-button {
   height: 64px;
   line-height: 64px;
