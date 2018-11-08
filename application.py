@@ -175,6 +175,7 @@ def charge():
         response = sg.client.mail.send.post(request_body={
             "template_id": RECEIPT_TEMPLATE_ID,
             "from": {
+                "name": "Mission Bit",
                 "email": "donate@missionbit.com"
             },
             "personalizations": [
