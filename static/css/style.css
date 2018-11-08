@@ -183,9 +183,14 @@ body {
   background: rgba(255, 255, 255, 90%);
 }
 
+#payment-request-button,
+#donate-button {
+  margin-top: 12px;
+  width: 100%;
+}
+
 #payment-request-button {
   width: 100%;
-  margin: 12px 0;
 }
 
 .payment-request_true {
@@ -198,10 +203,8 @@ body {
 #donate-button {
   height: 64px;
   line-height: 64px;
-  width: 100%;
   font-size: 18px;
   padding: 0 40px;
-  margin: 12px 0;
   color: #fff;
   background-color: #369ff4;
   transition: background-color .15s linear;
