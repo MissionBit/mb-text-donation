@@ -113,6 +113,14 @@ def favicon():
         mimetype='image/vnd.microsoft.icon'
     )
 
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'robots.txt',
+        mimetype='text/plain'
+    )
+
 @app.route('/.well-known/apple-developer-merchantid-domain-association')
 def apple_pay_domain_association():
     return send_from_directory(

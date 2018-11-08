@@ -1,4 +1,7 @@
 {% extends "layout.html" %}
+{% block head %}
+<link rel="preconnect" href="https://checkout.stripe.com">
+{% endblock %}
 {% block content %}
 <div class="donation">
   <form action="/charge" method="post" class="donate-form-container">
