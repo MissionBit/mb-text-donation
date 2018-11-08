@@ -65,7 +65,7 @@ deployed as-is.
 
 ### Canonical Host
 
-The ```CANONICAL_HOST`` environment variable can be used when the app is hosted behind
+The ```CANONICAL_HOST``` environment variable can be used when the app is hosted behind
 an Azure Verizon Premium CDN to ensure visitors are redirected to a specific HTTPS url.
 In production this is set to `missionbit.donate.com`.
 
