@@ -79,3 +79,5 @@ managed in Cloudflare.
 Sendgrid is used to send transactional email. This is managed through the Azure portal.
 
 Stripe is used to process credit card and paymentRequest transactions.
+
+Analytics come from Google Analytics.
