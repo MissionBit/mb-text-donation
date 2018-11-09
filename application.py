@@ -81,6 +81,7 @@ def set_default_app_context():
             'PWD',
             'WEBSITE_SITE_NAME',
         ]
+        app.logger.info('listdir .. = %s' % ' '.join(os.listdir('..')))
         for k in envs:
             v = os.environ.get(k)
             if v:
