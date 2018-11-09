@@ -84,6 +84,7 @@ def set_default_app_context():
         for k in envs:
             v = os.environ.get(k)
             if v:
+                print('SETTING DEFAULT: {}={}'.format(k, v))
                 requests_middleware._common_properties[k] = v
 
 set_default_app_context()
