@@ -78,10 +78,12 @@ def set_default_app_context():
     requests_middleware = appinsights._requests_middleware
     if requests_middleware:
         envs = [
-            'PWD',
-            'WEBSITE_SITE_NAME',
+            'WEBSITE_SITE_NAME'
         ]
-        app.logger.info('listdir .. = %s' % ' '.join(os.listdir('..')))
+        try:
+            app.logger.info('GIT VERSION: {}'.format(open('../repository/.git/refs/heads/master', 'r').read()))
+        except OSError:
+            pass
         for k in envs:
             v = os.environ.get(k)
             if v:
