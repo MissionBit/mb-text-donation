@@ -40,6 +40,7 @@ CHARGE_SCHEMA = {
         },
         "email": {"type": "string"},
         "name": {"type": "string"},
+        "metadata": {"type": "object"},
         "token": {
             "type": "object",
             "description": "Stripe token",
@@ -135,6 +136,7 @@ def index(dollars=''):
     return render_template(
         'index.html',
         key=stripe_keys['publishable_key'],
+        metadata=request.args,
         amount=parse_cents(dollars)
     )
 
@@ -175,7 +177,8 @@ def charge():
         customer=customer.id,
         amount=amount,
         currency='USD',
-        description='Donation'
+        description='Donation',
+        metadata=body.get('metadata')
     )
     sg = sendgrid.SendGridAPIClient(apikey=SENDGRID_API_KEY)
     email_sent = False

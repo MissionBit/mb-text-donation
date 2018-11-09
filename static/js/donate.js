@@ -8,7 +8,8 @@
       email: e.payerEmail,
       name: e.payerName,
       type: 'paymentRequest',
-      amount: amount
+      amount: amount,
+      metadata: METADATA
     }).then(
       function (result) {
         e.complete('success');
@@ -35,8 +36,25 @@
     });
   }
 
+  function oneTimeDonationItems(amount) {
+    return [{
+      id: 'web-donation-once',
+      name: 'One-time Donation',
+      price: amount / 100,
+      quantity: 1
+    }];
+  }
+
   function donationCompleted(result) {
     console.log({ donationCompleted: result });
+    gtag('event', 'purchase', {
+      transaction_id: result.id,
+      value: result.amount / 100,
+      currency: 'USD',
+      tax: 0,
+      shipping: 0,
+      items: oneTimeDonationItems(result.amount)
+    });
     formRef.classList.add('success');
     formRef.classList.toggle('email-sent', result.email_sent);
     spanReplace(formRef, '.donor-email', result.email);
@@ -127,6 +145,7 @@
   var stripe = Stripe(STRIPE_PK);
   var elements = stripe.elements();
   var amount = parseCents(amountRef.value) || parseCents('50');
+  var applePay = false;
   var paymentRequest = stripe.paymentRequest({
     country: 'US',
     currency: 'usd',
@@ -150,6 +169,7 @@
   paymentRequest.on('cancel', onCancel);
   paymentRequest.canMakePayment().then(function (result) {
     if (result) {
+      applePay = result.applePay;
       prButton.mount(paymentRequestButtonRef);
       formRef.classList.add('payment-request');
     }
@@ -168,18 +188,39 @@
         token: token,
         email: token.email,
         name: token.card.name,
-        type: 'checkout'
+        type: 'checkout',
+        metadata: METADATA
       }).then(donationCompleted, donationFailed);
     }
   });
 
   amountRef.addEventListener('change', refreshAmount);
   amountRef.addEventListener('input', refreshAmount);
+  prButton.on('click', function () {
+    gtag('event', 'begin_checkout', {
+      items: oneTimeDonationItems(amount),
+      coupon: ""
+    });
+    gtag('event', 'set_checkout_option', {
+      checkout_step: 1,
+      checkout_option: 'payment method',
+      value: applePay ? 'Apple Pay' : 'Payment Request'
+    });
+  });
   donateButtonRef.addEventListener('click', function (e) {
     e.preventDefault();
     if (amount === null) {
       return;
     }
+    gtag('event', 'begin_checkout', {
+      items: oneTimeDonationItems(amount),
+      coupon: ""
+    });
+    gtag('event', 'set_checkout_option', {
+      checkout_step: 1,
+      checkout_option: 'payment method',
+      value: 'Stripe Checkout'
+    });
     handler.open({
       amount: amount
     });
@@ -189,5 +230,16 @@
     return false;
   });
   refreshAmount();
+  if (window.performance) {
+    // Gets the number of milliseconds since page load
+    // (and rounds the result since the value must be an integer).
+    var timeSincePageLoad = Math.round(performance.now());
 
+    // Sends the timing event to Google Analytics.
+    gtag('event', 'timing_complete', {
+      'name': 'load',
+      'value': timeSincePageLoad,
+      'event_category': 'JS Dependencies'
+    });
+  }
 })();
