@@ -11,6 +11,7 @@ import sendgrid
 from jsonschema import validate
 from parse_cents import parse_cents
 from python_http_client import exceptions
+from applicationinsights.flask.ext import AppInsights
 
 RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
 SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
@@ -62,11 +63,37 @@ def verizonProxyHostFixer(app):
     return proxy_fixed_app
 
 app = Flask(__name__)
+appinsights = AppInsights(app)
 if CANONICAL_HOST:
     app.wsgi_app = verizonProxyHostFixer(ProxyFix(app.wsgi_app))
 streamHandler = logging.StreamHandler()
 app.logger.addHandler(streamHandler)
 app.logger.setLevel(logging.DEBUG)
+
+def get_telemetry_client():
+    requests_middleware = appinsights._requests_middleware
+    return requests_middleware.client if requests_middleware else None
+
+def set_default_app_context():
+    requests_middleware = appinsights._requests_middleware
+    if requests_middleware:
+        envs = [
+            'PWD',
+            'WEBSITE_SITE_NAME',
+        ]
+        for k in envs:
+            v = os.environ.get(k)
+            if v:
+                requests_middleware._common_properties[k] = v
+
+set_default_app_context()
+
+def merge_dicts(*dicts):
+    rval = {}
+    for d in dicts:
+        if d:
+            rval.update(d)
+    return rval
 
 @app.template_filter('asset_url')
 def asset_url(path, CACHE={}):
@@ -206,6 +233,20 @@ def charge():
         email_sent = 200 <= response.status_code < 300
     except exceptions.BadRequestsError:
         pass
+    client = get_telemetry_client()
+    if client:
+        client.track_event(
+            'Donation',
+            merge_dicts(body.get('metadata'), {
+                'email': customer.email,
+                'name': body.get('name') or '',
+                'id': charge.id,
+                'payment_method': format_source(charge.source)
+            }),
+            {
+                'amount': amount
+            }
+        )
 
     return jsonify(
         email_sent=email_sent,

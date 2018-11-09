@@ -7,7 +7,7 @@
 3. ```$ python3 -m venv venv```
 4. ```$ source venv/bin/activate```
 5. ```$ pip install -r requirements.txt```
-6. Export enviroment variables (or create a [.env file](https://pypi.org/project/python-dotenv/)) including values for ```PUBLISHABLE_KEY```, ```SECRET_KEY```, and ```SENDGRID_API_KEY```
+6. Export enviroment variables (or create a [.env file](https://pypi.org/project/python-dotenv/)) including values for ```PUBLISHABLE_KEY```, ```SECRET_KEY```, ```APPINSIGHTS_INSTRUMENTATIONKEY```, and ```SENDGRID_API_KEY```
 7. ```$ FLASK_APP=application.py flask run```
 
 ### Test
