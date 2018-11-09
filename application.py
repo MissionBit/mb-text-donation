@@ -13,6 +13,12 @@ from parse_cents import parse_cents
 from python_http_client import exceptions
 from applicationinsights.flask.ext import AppInsights
 
+try:
+    if 'WEBSITE_SITE_NAME' in os.environ:
+        os.environ['GIT_VERSION'] = open('../repository/.git/refs/heads/master', 'r').read()
+except OSError:
+    pass
+
 RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
 SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 
@@ -78,16 +84,12 @@ def set_default_app_context():
     requests_middleware = appinsights._requests_middleware
     if requests_middleware:
         envs = [
-            'WEBSITE_SITE_NAME'
+            'WEBSITE_SITE_NAME',
+            'GIT_VERSION'
         ]
-        try:
-            app.logger.info('GIT VERSION: {}'.format(open('../repository/.git/refs/heads/master', 'r').read()))
-        except OSError:
-            pass
         for k in envs:
             v = os.environ.get(k)
             if v:
-                app.logger.info('SETTING DEFAULT: {}={}'.format(k, v))
                 requests_middleware._common_properties[k] = v
 
 set_default_app_context()
