@@ -22,6 +22,18 @@ body {
   color: #444;
 }
 
+/*
+  iOS Safari viewport action bar workaround.
+
+  See also:
+  * https://www.eventbrite.com/engineering/mobile-safari-why/
+  * https://nicolas-hoizey.com/2015/02/viewport-height-is-taller-than-the-visible-part-of-the-document-in-some-mobile-browsers.html
+  * https://medium.com/samsung-internet-dev/toolbars-keyboards-and-the-viewports-10abcc6c3769
+*/
+html, body, .container {
+  height: 100%;
+}
+
 .container {
   width: 100vw;
   height: 100vh;
@@ -96,7 +108,7 @@ body {
   text-align: center;
   border: 1px;
   font-size: x-large;
-  padding: 1em;
+  padding: 0.5em;
 }
 
 .donate-form-container {
@@ -184,7 +196,8 @@ body {
 }
 
 #payment-request-button,
-#donate-button {
+#donate-button,
+#give-by-check-link {
   margin-top: 12px;
   width: 100%;
 }
@@ -228,14 +241,80 @@ body {
   padding: 10px 20px 20px;
 }
 
+#give-by-check-link {
+  text-align: center;
+  font-size: large;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  overflow: scroll;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-inner {
+  position: relative;
+  background-color: #fff;
+  padding: 20px;
+  height: auto;
+  min-height: auto;
+  min-width: 80%;
+}
+
+.modal-inner h2 {
+  margin: 0 0 0.83em;
+  font-size: 1.5em;
+}
+
+.modal-close {
+  /* reset button styles */
+  padding: 0;
+  border: none;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  /* the rest */
+  top: 0;
+  right: 10px;
+  line-height: 1.95em;
+  position: absolute;
+  font-size: 35px;
+  cursor: pointer;
+  color: #333232;
+  font-weight: 900;
+  font-family: Arial, sans-serif;
+}
+
 .navbar-header {
-  flex-grow: 1;
   width: 100%;
-  max-height: 100vw;
-  max-width: 100vh;
   align-self: center;
-  background: center / contain no-repeat url(../images/icon128.svg);
-  margin: 1em 5px 5px 5px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+  display: flex;
+  flex: none;
+}
+
+.navbar-header .logo {
+  width: 310px;
+  height: 100px;
+  background: center / contain no-repeat url(../images/horizontal-logo.svg);
+  text-decoration: none;
+  text-indent: -999em;
+  overflow: hidden;
 }
 
 footer {

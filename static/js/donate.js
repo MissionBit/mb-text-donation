@@ -137,11 +137,46 @@
     });
   }
 
+  function onKeyDownCheckModal(e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      hideCheckInstructions();
+    }
+  }
+
+  function showCheckInstructions() {
+    checkModalRef.classList.add('open');
+    window.addEventListener('keydown', onKeyDownCheckModal);
+    window.location.hash = '#give-by-check';
+  }
+
+  function hideCheckInstructions() {
+    checkModalRef.classList.remove('open');
+    window.removeEventListener('keydown', onKeyDownCheckModal);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(
+        null,
+        document.title,
+        window.location.pathname + window.location.search
+      );
+    } else {
+      window.location.hash = '';
+    }
+  }
+
+  function onClickCloseCheckInstructions(e) {
+    e.preventDefault();
+    hideCheckInstructions();
+  }
+
   var formRef = document.querySelector('form.donate-form-container');
   var amountRef = document.querySelector("input[name=amount]");
   var donateButtonRef = document.getElementById("donate-button");
   var paymentRequestButtonRef = document.getElementById("payment-request-button");
   var errorRef = document.querySelector('.donate-form-body .error');
+  var checkLinkRef = document.querySelector('#give-by-check-link');
+  var checkModalRef = document.querySelector('#give-by-check');
+  var modalCloseRef = document.querySelector('.modal-close');
   var stripe = Stripe(STRIPE_PK);
   var elements = stripe.elements();
   var amount = parseCents(amountRef.value) || parseCents('50');
@@ -225,10 +260,28 @@
       amount: amount
     });
   });
+  checkLinkRef.addEventListener('click', function (e) {
+    e.preventDefault();
+    showCheckInstructions();
+  });
+  checkModalRef.addEventListener('click', function (e) {
+    // Only register clicks that fall outside of the modal's content
+    if (e.target === e.currentTarget) {
+      e.preventDefault();
+      hideCheckInstructions();
+    }
+  });
+  modalCloseRef.addEventListener('click', function (e) {
+    e.preventDefault();
+    hideCheckInstructions();
+  });
   formRef.addEventListener('submit', function (e) {
     e.preventDefault();
     return false;
   });
+  if (window.location.hash === '#give-by-check') {
+    showCheckInstructions();
+  }
   refreshAmount();
   if (window.performance) {
     // Gets the number of milliseconds since page load
