@@ -80,4 +80,12 @@ Sendgrid is used to send transactional email. This is managed through the Azure 
 
 Stripe is used to process credit card and paymentRequest transactions.
 
-Analytics come from Google Analytics.
+Analytics come from Google Analytics, and events are also sent to the Application Insights
+instance `mb-text-donation-insights`. The Application Insights instance is set to do
+continuous streaming of data to the `mb-text-donation-insights` container of the
+`mbanalyticsstore` storage account.
+
+### Application Insights
+
+To analyze events sent to Application Insights, you can write
+[AIQL](https://docs.microsoft.com/en-us/azure/kusto/query/) (Kusto) queries in workbooks.
