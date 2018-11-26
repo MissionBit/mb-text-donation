@@ -14,7 +14,6 @@
   <meta property="og:description" content="Mission Bit is a 501(c)3 non-profit offering coding education and industry experiences to equip, empower and inspire public school youth to build products they dream up and broaden the opportunity horizon they envision for themselves.">
   <link rel="shorcut icon" href="/static/favicon.ico" />
   <link rel="stylesheet" type="text/css" href="{{ '/static/css/style.css' | asset_url }}" />
-  <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-47473369-4"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -26,19 +25,19 @@
 </head>
 <body>
   <div class="container">
-    <div class="navbar-header"></div>
+    <div class="navbar-header">
+      <a href="https://www.missionbit.com/" class="logo" title="Mission Bit">Mission Bit</a>
+    </div>
     {% block content %}{% endblock %}
     <footer>
       <address>
-        Mission Bit<br />
-        101 A Clay Street 121<br />
-        San Francisco, CA 94111<br />
+        Mission Bit is a 501(c)(3)<br />
         EIN: 46-0945785<br />
-        Phone: <a href="tel:1-415-879-5380">(415) 879-5380</a><br />
-        Contact: <a href="mailto:info@missionbit.com">info@missionbit.com</a><br />
-        Mission Bit is a 501 (c)(3)
+        <a href="mailto:info@missionbit.com">info@missionbit.com</a>
       </address>
     </footer>
   </div>
+  {% block modals %}{% endblock %}
+  {% block scripts %}{% endblock %}
 </body>
 </html>

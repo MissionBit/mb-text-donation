@@ -196,7 +196,8 @@ html, body, .container {
 }
 
 #payment-request-button,
-#donate-button {
+#donate-button,
+#give-by-check-link {
   margin-top: 12px;
   width: 100%;
 }
@@ -240,14 +241,72 @@ html, body, .container {
   padding: 10px 20px 20px;
 }
 
+#give-by-check-link {
+  text-align: center;
+  font-size: large;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  overflow: scroll;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-inner {
+  position: relative;
+  background-color: #fff;
+  padding: 40px;
+  height: auto;
+  min-height: auto;
+  min-width: 80%;
+}
+
+.modal-close {
+  top: 0;
+  right: 10px;
+  position: absolute;
+  font-size: 35px;
+  cursor: pointer;
+  color: #333232;
+  font-weight: 900;
+  font-family: Arial, sans-serif;
+}
+
 .navbar-header {
   flex-grow: 1;
   width: 100%;
   max-height: 100vw;
   max-width: 100vh;
   align-self: center;
-  background: center / contain no-repeat url(../images/icon128.svg);
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+  display: flex;
   margin: 1em 5px 5px 5px;
+}
+
+.navbar-header .logo {
+  display: flex;
+  width: 100%;
+  max-width: 310px;
+  flex-grow: 1;
+  background: center / contain no-repeat url(../images/horizontal-logo.svg);
+  text-decoration: none;
+  text-indent: -999em;
+  overflow: hidden;
 }
 
 footer {
