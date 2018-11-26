@@ -264,8 +264,17 @@
     e.preventDefault();
     showCheckInstructions();
   });
-  checkModalRef.addEventListener('click', onClickCloseCheckInstructions);
-  modalCloseRef.addEventListener('click', onClickCloseCheckInstructions);
+  checkModalRef.addEventListener('click', function (e) {
+    // Only register clicks that fall outside of the modal's content
+    if (e.target === e.currentTarget) {
+      e.preventDefault();
+      hideCheckInstructions();
+    }
+  });
+  modalCloseRef.addEventListener('click', function (e) {
+    e.preventDefault();
+    hideCheckInstructions();
+  });
   formRef.addEventListener('submit', function (e) {
     e.preventDefault();
     return false;

@@ -280,6 +280,13 @@ html, body, .container {
 }
 
 .modal-close {
+  /* reset button styles */
+  padding: 0;
+  border: none;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  /* the rest */
   top: 0;
   right: 10px;
   line-height: 1.95em;
