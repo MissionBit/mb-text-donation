@@ -108,7 +108,7 @@ html, body, .container {
   text-align: center;
   border: 1px;
   font-size: x-large;
-  padding: 1em;
+  padding: 0.5em;
 }
 
 .donate-form-container {
@@ -268,15 +268,21 @@ html, body, .container {
 .modal-inner {
   position: relative;
   background-color: #fff;
-  padding: 40px;
+  padding: 20px;
   height: auto;
   min-height: auto;
   min-width: 80%;
 }
 
+.modal-inner h2 {
+  margin: 0 0 0.83em;
+  font-size: 1.5em;
+}
+
 .modal-close {
   top: 0;
   right: 10px;
+  line-height: 1.95em;
   position: absolute;
   font-size: 35px;
   cursor: pointer;
@@ -286,23 +292,18 @@ html, body, .container {
 }
 
 .navbar-header {
-  flex-grow: 1;
   width: 100%;
-  max-height: 100vw;
-  max-width: 100vh;
   align-self: center;
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
   display: flex;
-  margin: 1em 5px 5px 5px;
+  flex: none;
 }
 
 .navbar-header .logo {
-  display: flex;
-  width: 100%;
-  max-width: 310px;
-  flex-grow: 1;
+  width: 310px;
+  height: 100px;
   background: center / contain no-repeat url(../images/horizontal-logo.svg);
   text-decoration: none;
   text-indent: -999em;
