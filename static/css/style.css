@@ -93,10 +93,23 @@ body {
 
 .donation {
   flex-grow: 1;
+  position: relative;
   text-align: center;
   border: 1px;
   font-size: x-large;
   padding: 0.5em;
+}
+
+.donation::after {
+  content: "";
+  position: absolute;
+  background: top no-repeat url(../images/3030-header-1440x640-tinyjpg.jpg);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  opacity: 0.4;
 }
 
 .donate-form-container {
@@ -105,6 +118,7 @@ body {
   margin: 0 auto;
   max-width: 390px;
   border: 1px solid #dfdfd7;
+  background: #fff;
   border-radius: 4px;
 
 }
