@@ -324,6 +324,26 @@ body {
   overflow: hidden;
 }
 
+.org-info {
+  max-width: 740px;
+  padding: 0 20px;
+  margin: 1em auto;
+  font-size: 21px;
+  line-height: 1.58;
+  font-weight: 400;
+  letter-spacing: -.003em;
+  font-family: Georgia,Cambria,"Times New Roman",Times,serif;
+  background-color: rgba(255, 255, 255, 90%);
+  border-radius: 4px;
+}
+
+@media (max-width: 767px) {
+  .org-info {
+    font-size: 18px;
+    letter-spacing: -.004em;
+  }
+}
+
 footer {
   align-self: center;
   padding: 1em;
