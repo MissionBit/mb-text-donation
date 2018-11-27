@@ -169,6 +169,28 @@
     hideCheckInstructions();
   }
 
+  /*
+  iOS Safari viewport action bar workaround.
+
+    See also:
+    * https://www.eventbrite.com/engineering/mobile-safari-why/
+    * https://nicolas-hoizey.com/2015/02/viewport-height-is-taller-than-the-visible-part-of-the-document-in-some-mobile-browsers.html
+    * https://medium.com/samsung-internet-dev/toolbars-keyboards-and-the-viewports-10abcc6c3769
+  */
+  function checkOrientation() {
+    console.log({ innerHeight: window.innerHeight, scrollHeight: containerRef.scrollHeight });
+    if (window.innerHeight < containerRef.scrollHeight) {
+      containerRef.style.maxHeight = window.innerHeight + 'px';
+    } else if (containerRef.style.maxHeight) {
+      containerRef.style.maxHeight = "";
+    }
+  }
+  function onResizeAfterOrientationChange(e) {
+    window.removeEventListener('resize', onResizeAfterOrientationChange);
+    checkOrientation();
+  }
+
+  var containerRef = document.querySelector('.container');
   var formRef = document.querySelector('form.donate-form-container');
   var amountRef = document.querySelector("input[name=amount]");
   var donateButtonRef = document.getElementById("donate-button");
@@ -295,4 +317,10 @@
       'event_category': 'JS Dependencies'
     });
   }
+  window.addEventListener('orientationchange', function (_e) {
+    window.addEventListener('resize', onResizeAfterOrientationChange);
+  });
+  checkOrientation();
+
+
 })();
