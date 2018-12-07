@@ -55,6 +55,17 @@
       shipping: 0,
       items: oneTimeDonationItems(result.amount)
     });
+    fbq('track', 'Purchase', {
+      value: result.amount / 100,
+      currency: 'USD',
+      contents: [{
+        id: 'web-donation-once',
+        quantity: 1,
+        item_price: result.amount / 100
+      }],
+      content_ids: ['web-donation-once'],
+      content_type: 'product'
+    });
     formRef.classList.add('success');
     formRef.classList.toggle('email-sent', result.email_sent);
     spanReplace(formRef, '.donor-email', result.email);
@@ -190,6 +201,30 @@
     checkOrientation();
   }
 
+  function trackCheckoutEvent(paymentMethod) {
+    gtag('event', 'begin_checkout', {
+      items: oneTimeDonationItems(amount),
+      coupon: ""
+    });
+    gtag('event', 'set_checkout_option', {
+      checkout_step: 1,
+      checkout_option: 'payment method',
+      value: paymentMethod
+    });
+    fbq('track', 'InitiateCheckout', {
+      value: amount / 100,
+      currency: 'USD',
+      contents: [{
+        id: 'web-donation-once',
+        quantity: 1,
+        item_price: amount / 100
+      }],
+      content_ids: ['web-donation-once'],
+      content_type: 'product',
+      payment_method: paymentMethod
+    });
+  }
+
   var containerRef = document.querySelector('.container');
   var formRef = document.querySelector('form.donate-form-container');
   var amountRef = document.querySelector("input[name=amount]");
@@ -254,30 +289,14 @@
   amountRef.addEventListener('change', refreshAmount);
   amountRef.addEventListener('input', refreshAmount);
   prButton.on('click', function () {
-    gtag('event', 'begin_checkout', {
-      items: oneTimeDonationItems(amount),
-      coupon: ""
-    });
-    gtag('event', 'set_checkout_option', {
-      checkout_step: 1,
-      checkout_option: 'payment method',
-      value: applePay ? 'Apple Pay' : 'Payment Request'
-    });
+    trackCheckoutEvent(applePay ? 'Apple Pay' : 'Payment Request');
   });
   donateButtonRef.addEventListener('click', function (e) {
     e.preventDefault();
     if (amount === null) {
       return;
     }
-    gtag('event', 'begin_checkout', {
-      items: oneTimeDonationItems(amount),
-      coupon: ""
-    });
-    gtag('event', 'set_checkout_option', {
-      checkout_step: 1,
-      checkout_option: 'payment method',
-      value: 'Stripe Checkout'
-    });
+    trackCheckoutEvent('Stripe Checkout');
     handler.open({
       amount: amount
     });
