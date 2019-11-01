@@ -25,30 +25,8 @@
         <div class="error"></div>
       </div>
       <div class="action-container">
-        <div class="processing-message">
-          Collecting your donation&hellip;
-        </div>
-        <div id="payment-request-button" class="payment-request_true"></div>
-        <button id="donate-button">Donate<span class="payment-request_true"> with card</span></button>
+        <button id="donate-button">Donate with card</span></button>
         <a href="#give-by-check" id="give-by-check-link">Give by check</a>
-      </div>
-      <div class="success-message">
-        <h2>Thank you!</h2>
-        <p class="email-sent_true">
-          Your donation has been collected and a receipt
-          has been sent to:<br />
-          <span class="donor-email"></span><br><br>
-          Transaction ID:<br>
-          <span class="donor-transaction-id"></span>
-        </p>
-        <p class="email-sent_false">
-          Your donation has been collected, but we were
-          unable to deliver a receipt email to
-          <span class="donor-email"></span>. We can issue
-          your receipt if you contact
-          <a href="mailto:donate@missionbit.com?subject=Missing recipt for transaction" class="donate-email-link">donate@missionbit.com</a>
-          with the transaction id:<br><span class="donor-transaction-id"></span>.
-        </p>
       </div>
     </div>
   </form>
@@ -103,8 +81,8 @@
 <script src="https://js.stripe.com/v3/"></script>
 <script src="https://checkout.stripe.com/checkout.js"></script>
 <script>
-var STRIPE_PK = {{ key | tojson }};
-var METADATA = {{ metadata | tojson }};
+window.STRIPE_PK = {{ key | tojson }};
+window.METADATA = {{ metadata | tojson }};
 </script>
 <script src="{{ '/static/js/donate.js' | asset_url }}"></script>
 {% endblock %}

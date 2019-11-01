@@ -1,30 +1,6 @@
 "use strict";
 
 (function () {
-  function onToken(e) {
-    console.log(e);
-    completeDonation({
-      token: e.token,
-      email: e.payerEmail,
-      name: e.payerName,
-      type: 'paymentRequest',
-      amount: amount,
-      metadata: METADATA
-    }).then(
-      function (result) {
-        e.complete('success');
-        donationCompleted(result);
-      },
-      function (err) {
-        e.complete('fail');
-        donationFailed(err);
-      }
-    );
-  }
-
-  function onCancel(e) {
-    console.log(e);
-  }
 
   function forEach(arrayLike, f) {
     Array.prototype.forEach.call(arrayLike, f);
@@ -175,11 +151,6 @@
     }
   }
 
-  function onClickCloseCheckInstructions(e) {
-    e.preventDefault();
-    hideCheckInstructions();
-  }
-
   /*
   iOS Safari viewport action bar workaround.
 
@@ -229,77 +200,42 @@
   var formRef = document.querySelector('form.donate-form-container');
   var amountRef = document.querySelector("input[name=amount]");
   var donateButtonRef = document.getElementById("donate-button");
-  var paymentRequestButtonRef = document.getElementById("payment-request-button");
   var errorRef = document.querySelector('.donate-form-body .error');
   var checkLinkRef = document.querySelector('#give-by-check-link');
   var checkModalRef = document.querySelector('#give-by-check');
   var modalCloseRef = document.querySelector('.modal-close');
-  var stripe = Stripe(STRIPE_PK);
-  var elements = stripe.elements();
+  var stripe = Stripe(window.STRIPE_PK);
   var amount = parseCents(amountRef.value) || parseCents('50');
-  var applePay = false;
-  var paymentRequest = stripe.paymentRequest({
-    country: 'US',
-    currency: 'usd',
-    total: {
-      label: 'Mission Bit Donation',
-      amount: amount,
-    },
-    requestPayerName: true,
-    requestPayerEmail: true
-  });
-  var prButton = elements.create('paymentRequestButton', {
-    paymentRequest: paymentRequest,
-    style: {
-      paymentRequestButton: {
-        type: 'donate',
-        height: '64px'
-      }
-    }
-  });
-  paymentRequest.on('token', onToken);
-  paymentRequest.on('cancel', onCancel);
-  paymentRequest.canMakePayment().then(function (result) {
-    if (result) {
-      applePay = result.applePay;
-      prButton.mount(paymentRequestButtonRef);
-      formRef.classList.add('payment-request');
-    }
-  });
-  var handler = StripeCheckout.configure({
-    key: STRIPE_PK,
-    image: 'https://www.missionbit.com/images/icon128.png',
-    locale: 'auto',
-    panelLabel: 'Donate {{amount}}',
-    name: 'Mission Bit',
-    description: 'Donate to Mission Bit',
-    token: function (token) {
-      console.log({ handlerToken: token });
-      completeDonation({
-        amount: amount,
-        token: token,
-        email: token.email,
-        name: token.card.name,
-        type: 'checkout',
-        metadata: METADATA
-      }).then(donationCompleted, donationFailed);
-    }
-  });
 
   amountRef.addEventListener('change', refreshAmount);
   amountRef.addEventListener('input', refreshAmount);
-  prButton.on('click', function () {
-    trackCheckoutEvent(applePay ? 'Apple Pay' : 'Payment Request');
-  });
   donateButtonRef.addEventListener('click', function (e) {
     e.preventDefault();
     if (amount === null) {
       return;
     }
     trackCheckoutEvent('Stripe Checkout');
-    handler.open({
-      amount: amount
-    });
+    fetch('/checkout', {
+      method: 'POST',
+      body: JSON.stringify({
+        amount: amount,
+        metadata: window.METADATA
+      }),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error("Could not connect to server, please try again.");
+      }
+    }).then(function (response) {
+      return stripe.redirectToCheckout(response).then(function (result) {
+        throw new Error(result.error.message);
+      });
+    }).catch(donationFailed);
   });
   checkLinkRef.addEventListener('click', function (e) {
     e.preventDefault();

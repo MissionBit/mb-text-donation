@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="donation">
+  <div class="donate-form-container">
+    <div class="donate-form-header">
+      <h2>Thank you!</h2>
+    </div>
+    <div class="donate-form-body">
+      <div class="success-message">
+        <p>
+          Your <strong>{{ '$%0.2f'| format(amount/100|float) }}</strong>
+          donation by {{ payment_method }} has been collected and a
+          receipt has been sent to:<br />
+          <span class="donor-email">{{ email }}</span><br><br>
+          Transaction ID:<br>
+          <span class="donor-transaction-id">{{ id }}</span>.<br><br>
+          If you have any questions about your donation, contact us at
+          <a href="mailto:{{ donate_email }}">{{ donate_email }}</a>.
+        </p>
+        <p>
+          From here you can <a href="/">donate again</a> or visit
+          <a href="https://www.missionbit.com/">missionbit.com</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
