@@ -341,9 +341,13 @@ if CANONICAL_HOSTS:
     @app.before_request
     def redirect_to_cdn():
         o = urlsplit(request.url)
-        if o.scheme == 'https' and o.netloc in CANONICAL_HOSTS:
-            return None
-        url = urlunsplit(('https', CANONICAL_HOSTS[0], o[2], o[3], o[4]))
+        redirect_host = CANONICAL_HOSTS[0]
+        if o.netloc in CANONICAL_HOSTS:
+            if o.scheme == 'https':
+                return None
+            else:
+                redirect_host = o.netloc
+        url = urlunsplit(('https', redirect_host, o[2], o[3], o[4]))
         return redirect(url, code=302)
 
 if __name__ == '__main__':
