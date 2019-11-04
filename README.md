@@ -66,6 +66,19 @@ We should consider having automated tests and a staging deployment or review
 apps, although we wouldn't be much worse off if master was automatically
 deployed as-is.
 
+### Stripe
+
+In [https://dashboard.stripe.com/webhooks](Webhooks), you should add an
+endpoint to the canonical host <https://donate.missionbit.com/hooks> for
+`checkout.session.completed` events and make note of the signing secret
+for use with the `WEBHOOK_SIGNING_SECRET` environment variable.
+
+### Azure Configuration
+
+In the Azure Portal, go to the
+[configuration for mb-text-donation](https://portal.azure.com/#@missionbit.onmicrosoft.com/resource/subscriptions/650e19b6-59a7-4af5-b457-311d76080306/resourceGroups/www/providers/Microsoft.Web/sites/mb-text-donation/configuration)
+and set any environment variables as Application Settings.
+
 ### Canonical Host
 
 The ```CANONICAL_HOST``` environment variable can be used when the app is hosted behind
