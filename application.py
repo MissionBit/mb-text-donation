@@ -5,7 +5,7 @@ import logging
 import hashlib
 from urllib.parse import urlsplit, urlunsplit
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, abort
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 import stripe
 import sendgrid
 from jsonschema import validate
@@ -51,7 +51,7 @@ def verizonProxyHostFixer(app):
     """Azure's Verizon Premium CDN uses the header X-Host instead of X-Forwarded-Host
     """
     def proxy_fixed_app(environ, start_response):
-        x_host = os.environ.get('HTTP_X_HOST')
+        x_host = environ.get('HTTP_X_HOST')
         if x_host in CANONICAL_HOSTS:
             environ['HTTP_X_FORWARDED_HOST'] = x_host
         return app(environ, start_response)
@@ -60,7 +60,8 @@ def verizonProxyHostFixer(app):
 app = Flask(__name__)
 appinsights = AppInsights(app)
 if CANONICAL_HOSTS:
-    app.wsgi_app = verizonProxyHostFixer(ProxyFix(app.wsgi_app))
+    # Azure's Verizon Premium CDN uses the header X-Host instead of X-Forwarded-Host
+    app.wsgi_app = verizonProxyHostFixer(ProxyFix(app.wsgi_app, x_host=1))
 streamHandler = logging.StreamHandler()
 app.logger.addHandler(streamHandler)
 app.logger.setLevel(logging.DEBUG)
