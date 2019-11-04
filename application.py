@@ -241,6 +241,7 @@ def checkout():
         cancel_url=urlunsplit((o.scheme, o.netloc, '/cancel', '', '')),
         billing_address_collection='required',
         payment_intent_data={
+            "description": "Donation",
             "metadata": body.get('metadata', {})
         },
         line_items=[
