@@ -323,18 +323,25 @@ def stripe_webhook():
         stripe_checkout_session_completed(event['data']['object'])
     return "", 200
 
+def host_default_amount(host):
+    if host.startswith('gala.'):
+        return '$250'
+    else:
+        return '$50'
+
 @app.route('/')
 @app.route('/<dollars>')
 @app.route('/<dollars>/')
 def index(dollars=''):
+    host = urlsplit(request.url).netloc
     return render_template(
         'index.html',
         key=stripe_keys['publishable_key'],
         metadata=merge_dicts(
             request.args,
-            { 'host': urlsplit(request.url).netloc }
+            { 'host': host }
         ),
-        amount=parse_cents(dollars)
+        amount=parse_cents(dollars) or parse_cents(host_default_amount(host))
     )
 
 if CANONICAL_HOSTS:
