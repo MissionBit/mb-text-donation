@@ -104,7 +104,7 @@ def asset_url(path, CACHE={}):
         stat = os.stat(abspath)
         key = stat.st_size, stat.st_mtime
         cached = CACHE.get(path)
-        if cached is not None and CACHE[0] == key:
+        if cached is not None and cached[0] == key:
             return cached[1]
         # Get a SHA1 digest of the file contents
         h = hashlib.sha1()

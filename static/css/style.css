@@ -279,6 +279,25 @@ body {
   border-radius: 4px;
 }
 
+.feature {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+.feature .endcap {
+  flex-grow: 0;
+  font-size: 150%;
+}
+.feature .middle {
+  flex-grow: 1;
+  text-align: center;
+  font-weight: bold;
+  font-size: 120%;
+}
+.feature-color {
+  color: #DC139C;
+}
+
 @media (max-width: 767px) {
   .org-info {
     font-size: 18px;
