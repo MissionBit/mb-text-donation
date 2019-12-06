@@ -2,53 +2,13 @@
 
 (function () {
 
-  function forEach(arrayLike, f) {
-    Array.prototype.forEach.call(arrayLike, f);
-  }
-
-  function spanReplace(parent, selector, text) {
-    forEach(parent.querySelectorAll(selector), function (el) {
-      el.innerText = text;
-    });
-  }
-
-  function oneTimeDonationItems(amount) {
-    return [{
-      id: 'web-donation-once',
-      name: 'One-time Donation',
+  function donationItem(amount, frequency) {
+    return {
+      id: frequency === 'monthly' ? 'web-donation-monthly' : 'web-donation-once',
+      name: frequency === 'monthly' ? 'Monthly Donation' : 'One-time Donation',
       price: amount / 100,
       quantity: 1
-    }];
-  }
-
-  function donationCompleted(result) {
-    console.log({ donationCompleted: result });
-    gtag('event', 'purchase', {
-      transaction_id: result.id,
-      value: result.amount / 100,
-      currency: 'USD',
-      tax: 0,
-      shipping: 0,
-      items: oneTimeDonationItems(result.amount)
-    });
-    fbq('track', 'Purchase', {
-      value: result.amount / 100,
-      currency: 'USD',
-      contents: [{
-        id: 'web-donation-once',
-        quantity: 1,
-        item_price: result.amount / 100
-      }],
-      content_ids: ['web-donation-once'],
-      content_type: 'product'
-    });
-    formRef.classList.add('success');
-    formRef.classList.toggle('email-sent', result.email_sent);
-    spanReplace(formRef, '.donor-email', result.email);
-    spanReplace(formRef, '.donor-transaction-id', result.id);
-    forEach(formRef.querySelectorAll('a.donate-email-link'), function (el) {
-      el.href = el.href.replace(/\S+$/, result.id);
-    });
+    };
   }
 
   function donationFailed(err) {
@@ -59,32 +19,6 @@
       formRef.removeAttribute("disabled");
       donateButtonRef.removeAttribute("disabled");
     }
-  }
-
-  function completeDonation(opts) {
-    console.log({ completeDonation: opts });
-    errorRef.innerText = "";
-    formRef.classList.add('processing');
-    formRef.setAttribute("disabled", "disabled");
-    donateButtonRef.setAttribute("disabled", "disabled");
-    amountRef.setAttribute("disabled", "disabled");
-
-    return fetch('/charge', {
-      method: 'POST',
-      body: JSON.stringify(opts),
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    }).then(function (response) {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error("Payment attempt failed");
-      }
-    }).finally(function () {
-      formRef.classList.remove('processing');
-    });
   }
 
   function parseCents(s) {
@@ -98,6 +32,18 @@
     var comma_groups = m[2] || '';
     var cents = m[3] || '00';
     return Number(leading + comma_groups.replace(/,/g, '') + cents);
+  }
+
+  function parseFrequency(s) {
+    return s === 'monthly' ? 'monthly' : 'once';
+  }
+
+  function refreshFrequency() {
+    Array.prototype.forEach.call(frequencyRefs, function (frequencyRef) {
+      if (frequencyRef.checked) {
+        frequency = parseFrequency(frequencyRef.value);
+      }
+    });
   }
 
   function refreshAmount() {
@@ -116,12 +62,6 @@
       donateButtonRef.removeAttribute("disabled");
     }
     amount = nextAmount;
-    paymentRequest.update({
-      total: {
-        label: 'Mission Bit Donation',
-        amount: amount,
-      }
-    });
   }
 
   function onKeyDownCheckModal(e) {
@@ -173,8 +113,9 @@
   }
 
   function trackCheckoutEvent(paymentMethod) {
+    var item = donationItem(amount, frequency);
     gtag('event', 'begin_checkout', {
-      items: oneTimeDonationItems(amount),
+      items: [item],
       coupon: ""
     });
     gtag('event', 'set_checkout_option', {
@@ -183,14 +124,14 @@
       value: paymentMethod
     });
     fbq('track', 'InitiateCheckout', {
-      value: amount / 100,
+      value: item.price,
       currency: 'USD',
       contents: [{
-        id: 'web-donation-once',
-        quantity: 1,
-        item_price: amount / 100
+        id: item.id,
+        quantity: item.quantity,
+        item_price: item.price
       }],
-      content_ids: ['web-donation-once'],
+      content_ids: [item.id],
       content_type: 'product',
       payment_method: paymentMethod
     });
@@ -199,6 +140,7 @@
   var containerRef = document.querySelector('.container');
   var formRef = document.querySelector('form.donate-form-container');
   var amountRef = document.querySelector("input[name=amount]");
+  var frequencyRefs = document.querySelectorAll("input[name=frequency]");
   var donateButtonRef = document.getElementById("donate-button");
   var errorRef = document.querySelector('.donate-form-body .error');
   var checkLinkRef = document.querySelector('#give-by-check-link');
@@ -206,7 +148,12 @@
   var modalCloseRef = document.querySelector('.modal-close');
   var stripe = Stripe(window.STRIPE_PK);
   var amount = parseCents(amountRef.value) || parseCents('50');
+  var frequency = 'once';
+  refreshFrequency();
 
+  Array.prototype.forEach.call(frequencyRefs, function (frequencyRef) {
+    frequencyRef.addEventListener('change', refreshFrequency);
+  });
   amountRef.addEventListener('change', refreshAmount);
   amountRef.addEventListener('input', refreshAmount);
   donateButtonRef.addEventListener('click', function (e) {
@@ -219,6 +166,7 @@
       method: 'POST',
       body: JSON.stringify({
         amount: amount,
+        frequency: frequency,
         metadata: window.METADATA
       }),
       headers: {

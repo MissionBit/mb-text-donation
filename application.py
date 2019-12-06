@@ -22,6 +22,7 @@ except OSError:
 RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
 SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 DONATE_EMAIL = "donate@missionbit.com"
+MONTHLY_PLAN_ID = 'mb-monthly-001'
 
 stripe_keys = {
   'secret_key': os.environ['SECRET_KEY'],
@@ -229,30 +230,47 @@ def success():
         donate_email=DONATE_EMAIL
     )
 
+def session_kw(amount, frequency, metadata):
+    if frequency == 'monthly':
+        return {
+            'mode': 'subscription',
+            'subscription_data': {
+                'items': [{
+                    'plan': MONTHLY_PLAN_ID,
+                    'quantity': amount
+                }],
+                'metadata': metadata
+            }
+        }
+    else:
+        return {
+            'mode': 'payment',
+            'line_items': [{
+                "amount": amount,
+                "currency": "USD",
+                "name": "One-time donation",
+                "quantity": 1
+            }],
+            'submit_type': "donate",
+            'payment_intent_data': {
+                "description": "Donation",
+                "metadata": metadata
+            }
+        }
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
     body = request.json
     validate(body, CHECKOUT_SCHEMA)
     amount = body['amount']
+    frequency = body['frequency']
     o = urlsplit(request.url)
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         success_url=urlunsplit((o.scheme, o.netloc, '/success', 'session_id={CHECKOUT_SESSION_ID}', '')),
         cancel_url=urlunsplit((o.scheme, o.netloc, '/cancel', '', '')),
         billing_address_collection='required',
-        payment_intent_data={
-            "description": "Donation",
-            "metadata": body.get('metadata', {})
-        },
-        line_items=[
-            {
-                "amount": amount,
-                "currency": "USD",
-                "name": "One-time donation",
-                "quantity": 1
-            }
-        ],
-        submit_type="donate"
+        **session_kw(amount=amount, frequency=frequency, metadata=body.get('metadata', {}))
     )
     return jsonify(sessionId=session.id)
 
