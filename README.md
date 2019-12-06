@@ -14,7 +14,9 @@
 
 ### Test
 
-Navigate to [http://localhost:5000/500](http://localhost:5000/500) to test. replace 500 with any integer value.
+Navigate to [http://localhost:5000/](http://localhost:5000/) to test. You can also use a donation
+amount as the path, e.g. [http://localhost:5000/123](http://localhost:5000/123) to prefill a $123
+donation.
 
 Currently, the only automated tests are doctests for the parse_cents module. These can be run with:
 
@@ -72,6 +74,10 @@ In [https://dashboard.stripe.com/webhooks](Webhooks), you should add an
 endpoint to the canonical host <https://donate.missionbit.com/hooks> for
 `checkout.session.completed` events and make note of the signing secret
 for use with the `WEBHOOK_SIGNING_SECRET` environment variable.
+
+For recurring donations, the app expects that there be a monthly plan
+with the id `mb-monthly-001` that is $0.01/mo. In our Mission Bit account,
+this plan should already be present in both test and live mode.
 
 ### Azure Configuration
 

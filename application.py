@@ -329,7 +329,9 @@ def stripe_webhook():
     event = None
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, stripe_keys['endpoint_secret']
+            payload=payload,
+            sig_header=sig_header,
+            secret=stripe_keys['endpoint_secret']
         )
     except ValueError as e:
         # Invalid payload
@@ -339,7 +341,7 @@ def stripe_webhook():
         return "Invalid signature", 400
     if event['type'] == 'checkout.session.completed':
         stripe_checkout_session_completed(event['data']['object'])
-    return "", 200
+    return jsonify({ 'status': 'success' })
 
 def host_default_amount(host):
     if host.startswith('gala.'):
