@@ -439,7 +439,11 @@ def stripe_webhook():
     }
     handler = handlers.get(event['type'])
     if handler is not None:
-        handler(event['data']['object'])
+        obj = event['data']['object']
+        print(f"handling {event['type']} id: {obj.id}")
+        handler(obj)
+    else:
+        print(f"{event['type']} not handled")
     return jsonify({ 'status': 'success' })
 
 def host_default_amount(host):
