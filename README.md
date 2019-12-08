@@ -10,7 +10,7 @@
 4. ```$ source venv/bin/activate```
 5. ```$ pip install -r requirements.txt```
 6. Export enviroment variables (or create a [.env file](https://pypi.org/project/python-dotenv/)) including values for ```PUBLISHABLE_KEY```, ```SECRET_KEY```, ```WEBHOOK_SIGNING_SECRET```, ```APPINSIGHTS_INSTRUMENTATIONKEY```, and ```SENDGRID_API_KEY```
-7. ```$ FLASK_APP=application.py flask run```
+7. ```$ FLASK_APP=application.py FLASK_DEBUG=1 flask run```
 
 ### Test
 
@@ -23,6 +23,16 @@ Currently, the only automated tests are doctests for the parse_cents module. The
 ```shell
 $ python parse_cents.py
 …
+```
+
+### Testing Webhooks & Email
+
+Use the [Stripe CLI](https://stripe.com/docs/stripe-cli) to listen for webhooks while testing to
+ensure that emails are processed correctly.
+
+```console
+$ stripe listen --forward-to=http://localhost:5000/hooks
+> Ready! Your webhook signing secret is … (^C to quit)
 ```
 
 ### Coding Standards

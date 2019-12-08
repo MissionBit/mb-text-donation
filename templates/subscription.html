@@ -3,16 +3,21 @@
 <div class="donation">
   <div class="donate-form-container">
     <div class="donate-form-header">
-      <h2>Thank you!</h2>
+      <h2>Manage Your Subscription</h2>
     </div>
     <div class="donate-form-body">
       <div class="success-message">
         <p>
           Your <strong>{{ '$%0.2f'| format(amount/100|float) }}</strong>
-          {{ frequency }} donation by {{ payment_method }} has been collected
-          and a receipt has been sent to:<br />
+          {{ frequency }} donation by {{ payment_method }} is
+          {% if subscription.status == 'active' %}
+            active and will renew on {{ next_cycle }}.
+          {% else %}
+            canceled.
+          {% endif %}
+          The email we have on file is:<br />
           <span class="donor-email">{{ email }}</span><br><br>
-          Transaction ID:<br>
+          Subscription ID:<br>
           <span class="donor-transaction-id">{{ id }}</span><br><br>
           If you have any questions about your {{ frequency }} donation, contact us at
           <a href="mailto:{{ donate_email }}">{{ donate_email }}</a>.
@@ -21,6 +26,14 @@
           From here you can <a href="/">donate again</a> or visit
           <a href="https://www.missionbit.com/">missionbit.com</a>.
         </p>
+        {% if subscription.status == 'active' %}
+        <form method="post">
+          <p>
+            If you would like to cancel your monthly donation,
+            <button class="cancel-subscription" type="submit">click here</button>.
+          </p>
+        </form>
+        {% endif %}
       </div>
     </div>
   </div>

@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="donation">
+  <div class="donate-form-container">
+    <div class="donate-form-header">
+      <h2>Donation canceled</h2>
+    </div>
+    <div class="donate-form-body">
+      <div class="cancel-message">
+        <p>
+          Your donation has been canceled.
+          If you have any questions about donations, contact us at
+          <a href="mailto:{{ donate_email }}">{{ donate_email }}</a>.
+        </p>
+        <p>
+          From here you can <a href="/">donate</a> or visit
+          <a href="https://www.missionbit.com/">missionbit.com</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

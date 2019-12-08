@@ -4,6 +4,8 @@ import time
 import logging
 import hashlib
 from urllib.parse import urlsplit, urlunsplit
+from datetime import datetime
+from dateutil import tz
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, abort
 from werkzeug.middleware.proxy_fix import ProxyFix
 import stripe
@@ -23,6 +25,7 @@ RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
 SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 DONATE_EMAIL = "donate@missionbit.com"
 MONTHLY_PLAN_ID = 'mb-monthly-001'
+LOCAL_TZ = tz.gettz('America/Los_Angeles')
 
 stripe_keys = {
   'secret_key': os.environ['SECRET_KEY'],
@@ -171,8 +174,7 @@ CARD_BRANDS = {
     'visa': 'Visa'
 }
 
-def format_charge_source(charge):
-    payment_method_details = charge.payment_method_details
+def format_payment_method_details_source(payment_method_details):
     payment_type = payment_method_details.type
     if payment_type in ("card", "card_present"):
         details = payment_method_details[payment_type]
@@ -194,6 +196,13 @@ def sendgrid_safe_name(name):
     """
     return re.sub(r'([,;]\s*)+', ' ', name)
 
+@app.route('/cancel')
+def cancel():
+    return render_template(
+        'cancel.html',
+        donate_email=DONATE_EMAIL
+    )
+
 @app.route('/success')
 def success():
     session_id = request.args.get('session_id')
@@ -201,34 +210,40 @@ def success():
         return redirect('/')
     session = stripe.checkout.Session.retrieve(
         session_id,
-        expand=['payment_intent']
+        expand=['payment_intent', 'subscription.default_payment_method']
     )
-    charge = session.payment_intent.charges.data[0]
-
-    client = get_telemetry_client()
-    if client:
-        client.track_event(
-            'Donation',
-            merge_dicts(charge.get('metadata'), {
-                'email': charge.billing_details.email,
-                'name': charge.billing_details.name,
-                'id': charge.id,
-                'payment_method': format_charge_source(charge)
-            }),
-            {
-                'amount': charge.amount
-            }
-        )
-
     return render_template(
         'success.html',
-        name=charge.billing_details.name,
-        email=charge.billing_details.email,
-        amount=charge.amount,
-        payment_method=format_charge_source(charge),
-        id=charge.id,
-        donate_email=DONATE_EMAIL
+        donate_email=DONATE_EMAIL,
+        **session_info(session)
     )
+
+def session_info(session):
+    if session.mode == 'subscription':
+        subscription = session.subscription
+        pm = subscription.default_payment_method
+        return merge_dicts(
+            {
+                'id': subscription.id,
+                'frequency': 'monthly',
+                'amount': subscription.plan.amount * subscription.quantity,
+                'payment_method': format_payment_method_details_source(pm)
+            },
+            billing_details_to(pm.billing_details)
+        )
+    elif session.mode == 'payment':
+        charge = session.payment_intent.charges.data[0]
+        return merge_dicts(
+            {
+                'id': charge.id,
+                'frequency': 'one-time',
+                'amount': charge.amount,
+                'payment_method': format_payment_method_details_source(charge.payment_method_details)
+            },
+            billing_details_to(charge.billing_details)
+        )
+    else:
+        raise NotImplementedError
 
 def session_kw(amount, frequency, metadata):
     if frequency == 'monthly':
@@ -265,62 +280,140 @@ def checkout():
     amount = body['amount']
     frequency = body['frequency']
     o = urlsplit(request.url)
+    metadata = merge_dicts(
+        body.get('metadata', {}),
+        { 'origin': urlunsplit((o.scheme, o.netloc, '', '', '')) }
+    )
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         success_url=urlunsplit((o.scheme, o.netloc, '/success', 'session_id={CHECKOUT_SESSION_ID}', '')),
         cancel_url=urlunsplit((o.scheme, o.netloc, '/cancel', '', '')),
         billing_address_collection='required',
-        **session_kw(amount=amount, frequency=frequency, metadata=body.get('metadata', {}))
+        **session_kw(amount=amount, frequency=frequency, metadata=metadata)
     )
     return jsonify(sessionId=session.id)
 
-def stripe_checkout_session_completed(session):
-    payment_intent = stripe.PaymentIntent.retrieve(session.payment_intent)
-    charge = payment_intent.charges.data[0]
+def billing_details_to(billing_details):
+    return {
+        "name": sendgrid_safe_name(billing_details.name),
+        "email": billing_details.email
+    }
 
+def stripe_checkout_session_completed(session):
+    # Subscription receipts are handled by invoice payments
+    if session.mode == 'payment':
+        return stripe_checkout_session_completed_payment(
+            stripe.checkout.Session.retrieve(
+                session.id,
+                expand=['payment_intent']
+            )
+        )
+
+def get_origin(metadata):
+    return metadata.get(
+        'origin',
+        f"https://{CANONICAL_HOSTS[0]}" if CANONICAL_HOSTS else 'http://localhost:5000'
+    )
+
+def stripe_invoice_payment_succeeded(invoice):
+    invoice = stripe.Invoice.retrieve(
+        invoice.id,
+        expand=['subscription', 'payment_intent']
+    )
+    subscription = invoice.subscription
+    charge = invoice.payment_intent.charges.data[0]
+    next_dt = datetime.fromtimestamp(subscription.current_period_end, LOCAL_TZ)
     sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
     try:
-        response = sg.send({
-            "template_id": RECEIPT_TEMPLATE_ID,
-            "from": {
-                "name": "Mission Bit",
-                "email": DONATE_EMAIL
-            },
-            "personalizations": [
-                {
-                    "to": [
-                        {
-                            "name": sendgrid_safe_name(charge.billing_details.name),
-                            "email": charge.billing_details.email
-                        }
-                    ],
-                    "dynamic_template_data": {
-                        "transaction_id": charge.id,
-                        "total": '${:,.2f}'.format(charge.amount * 0.01),
-                        "date": time.strftime('%x', time.gmtime(charge.created)),
-                        "payment_method": format_charge_source(charge)
-                    }
+        response = sg.send(
+            email_template_data(
+                charge,
+                'monthly',
+                monthly={
+                    "next": f"{next_dt.strftime('%b')} {next_dt.day}, {next_dt.year}",
+                    "url": f"{get_origin(subscription.metadata)}/subscriptions/{subscription.id}"
                 }
-            ]
-        })
+            )
+        )
         if not (200 <= response.status_code < 300):
             return abort(400)
     except exceptions.BadRequestsError:
         return abort(400)
-    client = get_telemetry_client()
-    if client:
-        client.track_event(
-            'Donation',
-            merge_dicts(payment_intent.metadata, {
-                'email': charge.billing_details.email,
-                'name': charge.billing_details.name,
-                'id': charge.id,
-                'payment_method': format_charge_source(charge)
-            }),
+    track_donation(
+        metadata=subscription.metadata,
+        frequency='monthly',
+        charge=charge
+    )
+
+def email_template_data(charge, frequency, **kw):
+    payment_method = format_payment_method_details_source(charge.payment_method_details)
+    return {
+        "template_id": RECEIPT_TEMPLATE_ID,
+        "from": {
+            "name": "Mission Bit",
+            "email": DONATE_EMAIL
+        },
+        "personalizations": [
             {
-                'amount': charge.amount
+                "to": [
+                    billing_details_to(charge.billing_details)
+                ],
+                "dynamic_template_data": merge_dicts(
+                    {
+                        "transaction_id": charge.id,
+                        "frequency": frequency,
+                        "total": '${:,.2f}'.format(charge.amount * 0.01),
+                        "date": datetime.fromtimestamp(charge.created, LOCAL_TZ).strftime('%x'),
+                        "payment_method": payment_method
+                    },
+                    kw
+                )
             }
-        )
+        ]
+    }
+
+def track_donation(metadata, frequency, charge):
+    client = get_telemetry_client()
+    if client is None:
+        return
+    payment_method = format_payment_method_details_source(charge.payment_method_details)
+    client.track_event(
+        'Donation',
+        merge_dicts(
+            metadata,
+            billing_details_to(charge.billing_details),
+            {
+                'id': charge.id,
+                'frequency': frequency,
+                'payment_method': payment_method
+            }
+        ),
+        {
+            'amount': charge.amount
+        }
+    )
+
+def stripe_checkout_session_completed_payment(session):
+    payment_intent = session.payment_intent
+    charge = payment_intent.charges.data[0]
+    payment_method = format_payment_method_details_source(charge.payment_method_details)
+    sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
+    try:
+        response = sg.send(email_template_data(charge, 'one-time'))
+        if not (200 <= response.status_code < 300):
+            return abort(400)
+    except exceptions.BadRequestsError:
+        return abort(400)
+    track_donation(
+        metadata=payment_intent.metadata,
+        frequency='one-time',
+        charge=charge
+    )
+
+
+def stripe_invoice_payment_failed(invoice):
+    print('payment failed')
+    print(repr(invoice))
 
 @app.route('/hooks', methods=['POST'])
 def stripe_webhook():
@@ -339,8 +432,14 @@ def stripe_webhook():
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
         return "Invalid signature", 400
-    if event['type'] == 'checkout.session.completed':
-        stripe_checkout_session_completed(event['data']['object'])
+    handlers = {
+        'checkout.session.completed': stripe_checkout_session_completed,
+        'invoice.payment_succeeded': stripe_invoice_payment_succeeded,
+        'invoice.payment_failed': stripe_invoice_payment_failed
+    }
+    handler = handlers.get(event['type'])
+    if handler is not None:
+        handler(event['data']['object'])
     return jsonify({ 'status': 'success' })
 
 def host_default_amount(host):
@@ -348,6 +447,37 @@ def host_default_amount(host):
         return '$250'
     else:
         return '$50'
+
+@app.route('/subscriptions/<subscription_id>')
+def subscription(subscription_id):
+    try:
+        subscription = stripe.Subscription.retrieve(
+            subscription_id,
+            expand=['default_payment_method']
+        )
+    except stripe.error.InvalidRequestError:
+        return redirect('/')
+    pm = subscription.default_payment_method
+    next_dt = datetime.fromtimestamp(subscription.current_period_end, LOCAL_TZ)
+    return render_template(
+        'subscription.html',
+        donate_email=DONATE_EMAIL,
+        subscription=subscription,
+        id=subscription.id,
+        frequency='monthly',
+        amount=subscription.plan.amount * subscription.quantity,
+        payment_method=format_payment_method_details_source(pm),
+        next_cycle=f"{next_dt.strftime('%b')} {next_dt.day}, {next_dt.year}",
+        **billing_details_to(pm.billing_details)
+    )
+
+@app.route('/subscriptions/<subscription_id>', methods=['POST'])
+def delete_subscription(subscription_id):
+    try:
+        stripe.Subscription.delete(subscription_id)
+    except stripe.error.InvalidRequestError:
+        return redirect(f'/subscriptions/{subscription_id}')
+    return redirect(f'/subscriptions/{subscription_id}')
 
 @app.route('/')
 @app.route('/<dollars>')
