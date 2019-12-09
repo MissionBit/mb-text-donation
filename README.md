@@ -15,8 +15,8 @@
 ### Test
 
 Navigate to [http://localhost:5000/](http://localhost:5000/) to test. You can also use a donation
-amount as the path, e.g. [http://localhost:5000/123](http://localhost:5000/123) to prefill a $123
-donation.
+amount as the path, e.g. [http://localhost:5000/123/](http://localhost:5000/123/) to prefill a $123
+donation. The frequency can also be prefilled, e.g. [http://localhost:5000/123/?frequency=monthly](http://localhost:5000/123/?frequency=monthly).
 
 Currently, the only automated tests are doctests for the parse_cents module. These can be run with:
 
