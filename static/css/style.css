@@ -141,11 +141,23 @@ body {
   z-index: 0;
 }
 
-.success-message {
+.success-message,
+.cancel-message {
   padding: 10px 0;
 }
 
-.success-message p {
+button.cancel-subscription {
+  background: none!important;
+  border: none;
+  padding: 0!important;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.success-message p,
+.cancel-message p {
   text-align: left;
   font-size: large;
 }
@@ -296,6 +308,25 @@ body {
 }
 .feature-color {
   color: #DC139C;
+}
+
+.frequency-group {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 0 2px;
+}
+.frequency-group input {
+  margin: 0 10px 0 0;
+  font-size: 175%;
+}
+.frequency-group label {
+  font-size: 21px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
 
 @media (max-width: 767px) {

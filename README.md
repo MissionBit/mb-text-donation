@@ -10,17 +10,29 @@
 4. ```$ source venv/bin/activate```
 5. ```$ pip install -r requirements.txt```
 6. Export enviroment variables (or create a [.env file](https://pypi.org/project/python-dotenv/)) including values for ```PUBLISHABLE_KEY```, ```SECRET_KEY```, ```WEBHOOK_SIGNING_SECRET```, ```APPINSIGHTS_INSTRUMENTATIONKEY```, and ```SENDGRID_API_KEY```
-7. ```$ FLASK_APP=application.py flask run```
+7. ```$ FLASK_APP=application.py FLASK_DEBUG=1 flask run```
 
 ### Test
 
-Navigate to [http://localhost:5000/500](http://localhost:5000/500) to test. replace 500 with any integer value.
+Navigate to [http://localhost:5000/](http://localhost:5000/) to test. You can also use a donation
+amount as the path, e.g. [http://localhost:5000/123/](http://localhost:5000/123/) to prefill a $123
+donation. The frequency can also be prefilled, e.g. [http://localhost:5000/123/?frequency=monthly](http://localhost:5000/123/?frequency=monthly).
 
 Currently, the only automated tests are doctests for the parse_cents module. These can be run with:
 
 ```shell
 $ python parse_cents.py
 …
+```
+
+### Testing Webhooks & Email
+
+Use the [Stripe CLI](https://stripe.com/docs/stripe-cli) to listen for webhooks while testing to
+ensure that emails are processed correctly.
+
+```console
+$ stripe listen --forward-to=http://localhost:5000/hooks
+> Ready! Your webhook signing secret is … (^C to quit)
 ```
 
 ### Coding Standards
@@ -72,6 +84,10 @@ In [https://dashboard.stripe.com/webhooks](Webhooks), you should add an
 endpoint to the canonical host <https://donate.missionbit.com/hooks> for
 `checkout.session.completed` events and make note of the signing secret
 for use with the `WEBHOOK_SIGNING_SECRET` environment variable.
+
+For recurring donations, the app expects that there be a monthly plan
+with the id `mb-monthly-001` that is $0.01/mo. In our Mission Bit account,
+this plan should already be present in both test and live mode.
 
 ### Azure Configuration
 
