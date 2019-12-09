@@ -22,6 +22,7 @@ except OSError:
     pass
 
 RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
+FAILURE_TEMPLATE_ID = 'd-570b4b8b20e74ec5a9c55be7e07e2665'
 SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
 DONATE_EMAIL = "donate@missionbit.com"
 MONTHLY_PLAN_ID = 'mb-monthly-001'
@@ -327,8 +328,9 @@ def stripe_invoice_payment_succeeded(invoice):
     try:
         response = sg.send(
             email_template_data(
-                charge,
-                'monthly',
+                template_id=RECEIPT_TEMPLATE_ID,
+                charge=charge,
+                frequency='monthly',
                 monthly={
                     "next": f"{next_dt.strftime('%b')} {next_dt.day}, {next_dt.year}",
                     "url": f"{get_origin(subscription.metadata)}/subscriptions/{subscription.id}"
@@ -345,10 +347,10 @@ def stripe_invoice_payment_succeeded(invoice):
         charge=charge
     )
 
-def email_template_data(charge, frequency, **kw):
+def email_template_data(template_id, charge, frequency, **kw):
     payment_method = format_payment_method_details_source(charge.payment_method_details)
     return {
-        "template_id": RECEIPT_TEMPLATE_ID,
+        "template_id": template_id,
         "from": {
             "name": "Mission Bit",
             "email": DONATE_EMAIL
@@ -371,6 +373,27 @@ def email_template_data(charge, frequency, **kw):
             }
         ]
     }
+
+def track_invoice_failure(metadata, frequency, charge):
+    client = get_telemetry_client()
+    if client is None:
+        return
+    payment_method = format_payment_method_details_source(charge.payment_method_details)
+    client.track_event(
+        'DonationFailed',
+        merge_dicts(
+            metadata,
+            billing_details_to(charge.billing_details),
+            {
+                'id': charge.id,
+                'frequency': frequency,
+                'payment_method': payment_method
+            }
+        ),
+        {
+            'amount': charge.amount
+        }
+    )
 
 def track_donation(metadata, frequency, charge):
     client = get_telemetry_client()
@@ -399,7 +422,13 @@ def stripe_checkout_session_completed_payment(session):
     payment_method = format_payment_method_details_source(charge.payment_method_details)
     sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
     try:
-        response = sg.send(email_template_data(charge, 'one-time'))
+        response = sg.send(
+            email_template_data(
+                template_id=RECEIPT_TEMPLATE_ID,
+                charge=charge,
+                frequency='one-time'
+            )
+        )
         if not (200 <= response.status_code < 300):
             return abort(400)
     except exceptions.BadRequestsError:
@@ -412,8 +441,42 @@ def stripe_checkout_session_completed_payment(session):
 
 
 def stripe_invoice_payment_failed(invoice):
-    print('payment failed')
-    print(repr(invoice))
+    invoice = stripe.Invoice.retrieve(
+        invoice.id,
+        expand=['subscription', 'payment_intent']
+    )
+    if invoice.billing_reason != 'subscription_cycle':
+        # No email unless it's a renewal, they got an error in the
+        # Stripe Checkout UX for new subscriptions.
+        return
+    subscription = invoice.subscription
+    charge = invoice.payment_intent.charges.data[0]
+    sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
+    origin = get_origin(subscription.metadata)
+    try:
+        response = sg.send(
+            email_template_data(
+                template_id=FAILURE_TEMPLATE_ID,
+                charge=charge,
+                frequency='monthly',
+                failure_message=charge.failure_message,
+                renew_url=f"{origin}/{'${:,.2f}'.format(charge.amount * 0.01)}/?frequency=monthly",
+                subscription_id=subscription.id,
+                subscription_url=f"{origin}/subscriptions/{subscription.id}"
+            )
+        )
+        if not (200 <= response.status_code < 300):
+            return abort(400)
+    except exceptions.BadRequestsError:
+        return abort(400)
+    # Cancel the subscription to avoid future charges
+    if subscription.status != 'canceled':
+        stripe.Subscription.delete(subscription.id)
+    track_invoice_failure(
+        metadata=subscription.metadata,
+        frequency='monthly',
+        charge=charge
+    )
 
 @app.route('/hooks', methods=['POST'])
 def stripe_webhook():
@@ -488,6 +551,8 @@ def delete_subscription(subscription_id):
 @app.route('/<dollars>/')
 def index(dollars=''):
     host = urlsplit(request.url).netloc
+    frequency = 'monthly' if request.args.get('frequency', 'once') == 'monthly' else 'once'
+    amount = parse_cents(dollars) or parse_cents(host_default_amount(host))
     return render_template(
         'index.html',
         key=stripe_keys['publishable_key'],
@@ -495,7 +560,8 @@ def index(dollars=''):
             request.args,
             { 'host': host }
         ),
-        amount=parse_cents(dollars) or parse_cents(host_default_amount(host))
+        frequency=frequency,
+        formatted_dollar_amount='{:.2f}'.format(amount * 0.01) if amount % 100 else f"{amount // 100}"
     )
 
 if CANONICAL_HOSTS:

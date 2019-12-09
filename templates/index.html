@@ -17,7 +17,7 @@
             name="amount"
             required
             step="1"
-            value="{{ amount // 100 if amount else 50 }}"
+            value="{{ formatted_dollar_amount }}"
             aria-label="Donation Amount"
           />
           <span class="postinput">USD</span>
@@ -25,8 +25,8 @@
         <div class="error"></div>
       </div>
       <div class="frequency-group">
-        <label for="frequency_once"><input type="radio" name="frequency" value="once" id="frequency_once" checked /> One-time</label>
-        <label for="frequency_monthly"><input type="radio" name="frequency" value="monthly" id="frequency_monthly" /> Monthly</label>
+        <label for="frequency_once"><input type="radio" name="frequency" value="once" id="frequency_once" {% if frequency == "once" %}checked{% endif %} /> One-time</label>
+        <label for="frequency_monthly"><input type="radio" name="frequency" value="monthly" id="frequency_monthly" {% if frequency == "monthly" %}checked{% endif %} /> Monthly</label>
       </div>
       <div class="action-container">
         <button id="donate-button">Donate with card</span></button>
