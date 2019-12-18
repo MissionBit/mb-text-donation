@@ -289,7 +289,6 @@ def checkout():
         payment_method_types=["card"],
         success_url=urlunsplit((o.scheme, o.netloc, '/success', 'session_id={CHECKOUT_SESSION_ID}', '')),
         cancel_url=urlunsplit((o.scheme, o.netloc, '/cancel', '', '')),
-        billing_address_collection='required',
         **session_kw(amount=amount, frequency=frequency, metadata=metadata)
     )
     return jsonify(sessionId=session.id)
