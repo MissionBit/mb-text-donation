@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import time
 import logging
 import hashlib
@@ -21,17 +22,28 @@ try:
 except OSError:
     pass
 
+TEST_ENVIRONMENT = os.path.basename(sys.argv[0]) == 'pytest'
+
+def require_env(k: str) -> str:
+    v = os.environ.get(k)
+    if v is None:
+        if TEST_ENVIRONMENT:
+            return f'TEST_{k}'
+        else:
+            raise KeyError(f"Missing required environment variable {k}")
+    return v
+
 RECEIPT_TEMPLATE_ID = 'd-7e5e6a89f9284d2ab01d6c1e27a180f8'
 FAILURE_TEMPLATE_ID = 'd-570b4b8b20e74ec5a9c55be7e07e2665'
-SENDGRID_API_KEY = os.environ['SENDGRID_API_KEY']
+SENDGRID_API_KEY = require_env('SENDGRID_API_KEY')
 DONATE_EMAIL = "donate@missionbit.com"
 MONTHLY_PLAN_ID = 'mb-monthly-001'
 LOCAL_TZ = tz.gettz('America/Los_Angeles')
 
 stripe_keys = {
-  'secret_key': os.environ['SECRET_KEY'],
-  'publishable_key': os.environ['PUBLISHABLE_KEY'],
-  'endpoint_secret': os.environ['WEBHOOK_SIGNING_SECRET']
+  'secret_key': require_env('SECRET_KEY'),
+  'publishable_key': require_env('PUBLISHABLE_KEY'),
+  'endpoint_secret': require_env('WEBHOOK_SIGNING_SECRET')
 }
 
 stripe.api_key = stripe_keys['secret_key']
