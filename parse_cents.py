@@ -4,9 +4,10 @@
 import re
 from typing import Optional
 
-__all__ = ['parse_cents']
+__all__ = ["parse_cents"]
 
-DOLLAR_RE = re.compile(r'^\s*\$?([1-9]\d*)((?:,\d\d\d)*)(?:\.(\d\d))?\s*$')
+DOLLAR_RE = re.compile(r"^\s*\$?([1-9]\d*)((?:,\d\d\d)*)(?:\.(\d\d))?\s*$")
+
 
 def parse_cents(s: str) -> Optional[int]:
     """Parse non-zero positive dollar amount expressions into cents or None
@@ -46,8 +47,10 @@ def parse_cents(s: str) -> Optional[int]:
     if m is None:
         return None
     (leading_digits, comma_groups, cents) = m.groups()
-    return int(leading_digits + comma_groups.replace(',', '') + (cents or '00'))
+    return int(leading_digits + comma_groups.replace(",", "") + (cents or "00"))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import doctest
+
     doctest.testmod()
