@@ -49,7 +49,7 @@ def require_env(k: str) -> str:
 RECEIPT_TEMPLATE_ID = "d-7e5e6a89f9284d2ab01d6c1e27a180f8"
 FAILURE_TEMPLATE_ID = "d-570b4b8b20e74ec5a9c55be7e07e2665"
 SENDGRID_API_KEY = require_env("SENDGRID_API_KEY")
-DONATE_EMAIL = "donate@missionbit.com"
+DONATE_EMAIL = "donate@missionbit.org"
 MONTHLY_PLAN_ID = "mb-monthly-001"
 LOCAL_TZ = tz.gettz("America/Los_Angeles")
 
