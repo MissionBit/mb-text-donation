@@ -81,7 +81,7 @@ deployed as-is.
 ### Stripe
 
 In [https://dashboard.stripe.com/webhooks](Webhooks), you should add an
-endpoint to the canonical host <https://donate.missionbit.com/hooks> for
+endpoint to the canonical host <https://donate.missionbit.org/hooks> for
 `checkout.session.completed` events and make note of the signing secret
 for use with the `WEBHOOK_SIGNING_SECRET` environment variable.
 
@@ -99,20 +99,20 @@ and set any environment variables as Application Settings.
 
 The ```CANONICAL_HOST``` environment variable can be used when the app is hosted behind
 an Azure Verizon Premium CDN to ensure visitors are redirected to a specific HTTPS url.
-In production this is set to `donate.missionbit.com`.
+In production this is set to `donate.missionbit.org`.
 
 Alternative domains that should not get redirected may also be included, e.g.
 
 ```bash
-CANONICAL_HOST=donate.missionbit.com gala.missionbit.org
+CANONICAL_HOST=donate.missionbit.org gala.missionbit.org
 ```
 
 ### Infrastructure
 
-When a request to <https://donate.missionbit.com/> comes in, it is routed to the
-`mb-text-donation-cdn` endpoint (an Azure Verizon Premium CDN), which uses the
-`mb-text-donation` App Service as its origin. The DNS for missionbit.com is currently
-managed in Cloudflare.
+When a request to <https://donate.missionbit.org/> comes in, it is routed to the
+`mb-text-donation` Front Door endpoint, which uses the
+`mb-text-donation` App Service as its origin. The DNS for missionbit.org is in Azure,
+and the DNS for missionbit.com is currently managed in Cloudflare.
 
 Sendgrid is used to send transactional email. This is managed through the Azure portal.
 
