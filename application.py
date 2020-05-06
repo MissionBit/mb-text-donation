@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import traceback
 import logging
 import hashlib
 from urllib.parse import urlsplit, urlunsplit
@@ -337,6 +338,13 @@ def billing_details_to(billing_details):
     }
 
 
+def donor_name(billing_details):
+    if billing_details.name:
+        return f"{billing_details.name} <{billing_details.email}>"
+    else:
+        return billing_details.email
+
+
 def stripe_checkout_session_completed(session):
     # Subscription receipts are handled by invoice payments
     if session.mode == "payment":
@@ -375,6 +383,7 @@ def stripe_invoice_payment_succeeded(invoice):
         if not (200 <= response.status_code < 300):
             return abort(400)
     except exceptions.BadRequestsError:
+
         return abort(400)
     track_donation(metadata=subscription.metadata, frequency="monthly", charge=charge)
 
@@ -396,6 +405,7 @@ def email_template_data(template_id, charge, frequency, **kw):
                             charge.created, LOCAL_TZ
                         ).strftime("%x"),
                         "payment_method": payment_method,
+                        "donor": donor_name(charge.billing_details),
                     },
                     kw,
                 ),
@@ -448,8 +458,10 @@ def stripe_checkout_session_completed_payment(session):
             )
         )
         if not (200 <= response.status_code < 300):
+            print(repr(response))
             return abort(400)
     except exceptions.BadRequestsError:
+        traceback.print_tb(sys.last_traceback)
         return abort(400)
     track_donation(
         metadata=payment_intent.metadata, frequency="one-time", charge=charge
@@ -505,9 +517,11 @@ def stripe_webhook():
         )
     except ValueError as e:
         # Invalid payload
+        print("Invalid hook payload")
         return "Invalid payload", 400
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
+        print("Invalid hook signature")
         return "Invalid signature", 400
     handlers = {
         "checkout.session.completed": stripe_checkout_session_completed,
