@@ -366,6 +366,9 @@ def stripe_invoice_payment_succeeded(invoice):
     )
     subscription = invoice.subscription
     charge = invoice.payment_intent.charges.data[0]
+    if is_from_new_app(subscription.metadata):
+        print(f"Skipping subscription email from new app: {charge.id}")
+        return
     next_dt = datetime.fromtimestamp(subscription.current_period_end, LOCAL_TZ)
     sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
     try:
@@ -450,6 +453,9 @@ def stripe_checkout_session_completed_payment(session):
     payment_intent = session.payment_intent
     charge = payment_intent.charges.data[0]
     payment_method = format_payment_method_details_source(charge.payment_method_details)
+    if is_from_new_app(payment_intent.metadata):
+        print(f"Skipping charge email from new app: {charge.id}")
+        return
     sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
     try:
         response = sg.send(
@@ -478,6 +484,9 @@ def stripe_invoice_payment_failed(invoice):
         return
     subscription = invoice.subscription
     charge = invoice.payment_intent.charges.data[0]
+    if is_from_new_app(subscription.metadata):
+        print(f"Skipping subscription failure email from new app: {charge.id}")
+        return
     sg = sendgrid.SendGridAPIClient(SENDGRID_API_KEY)
     origin = get_origin(subscription.metadata)
     try:
@@ -503,6 +512,10 @@ def stripe_invoice_payment_failed(invoice):
         metadata=subscription.metadata, frequency="monthly", charge=charge
     )
 
+def is_from_new_app(metadata):
+    """Events created by the new www.missionbit.org donation portal should be ignored
+    """
+    return metadata.get("app") == "www.missionbit.org"
 
 @app.route("/hooks", methods=["POST"])
 def stripe_webhook():
