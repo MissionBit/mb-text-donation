@@ -35,6 +35,7 @@ except OSError:
     pass
 
 TEST_ENVIRONMENT = os.path.basename(sys.argv[0]) == "pytest"
+REDIRECT_TO_WWW = os.environ.get("REDIRECT_TO_WWW") != "false"
 
 
 def require_env(k: str) -> str:
@@ -560,6 +561,8 @@ def host_default_amount(host):
 
 @app.route("/subscriptions/<subscription_id>")
 def subscription(subscription_id):
+    if REDIRECT_TO_WWW:
+        return redirect(f"https://www.missionbit.org/donate/subscriptions/{subscription_id}")
     try:
         subscription = stripe.Subscription.retrieve(
             subscription_id, expand=["default_payment_method"]
@@ -594,6 +597,8 @@ def delete_subscription(subscription_id):
 @app.route("/<dollars>")
 @app.route("/<dollars>/")
 def index(dollars=""):
+    if REDIRECT_TO_WWW:
+        return redirect("https://www.missionbit.org/donate")
     host = urlsplit(request.url).netloc
     frequency = (
         "monthly" if request.args.get("frequency", "once") == "monthly" else "once"
